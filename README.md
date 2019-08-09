@@ -55,6 +55,14 @@ The essential idea of the system is that a person linked with it is able to rece
 
 Initially, the data of each account and its transactions are stored in a text file. The file structure is the following:
 
+__Line 1__: "*C" Represents that the list "clients" will be filled
+__Line 2__: ID-Name-Address-Phone
+__Line 3__: "*B" Represents that the list "accounts" will be filled
+__Line 4__: Person's ID-Bank-Account's ID-Account type-Balance
+__Line 5__: "*T" Represents that the list "transactions" will be filled
+__Line 6__: Issuer's ID-Transaction's type-Issuer's account ID-Receiver's ID-Date-Amount-Description-Receiver's account ID
+
+![Example](./img/exampleFile.png)
 
 ## Output
 
@@ -84,7 +92,9 @@ It's required an interactive menu with the following options
      4. Given a person's data (ID and name) show all the transactions sorted by account's ID, first show the payment transactions, then the charging transactions, both of them sorted by date. Show also the total amount from each account.
      5. Given a closed range of values for an amount, print all the transactions linked to that range by an increasing order, data that should be showed is: Amount, date/time, name of both parties, account's ID from both parties, ID of both parties.
 
-* __4. Exit:__ The program must facilitate the end of its execution
+* __4. Load data from a file__: All the structures can be filled from a text file
+
+* __5. Exit:__ The program must facilitate the end of its execution
 
 ## Technologies
 * Visual Studio Code with the C/C++ extension
