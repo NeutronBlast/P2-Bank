@@ -53,7 +53,7 @@ The essential idea of the system is that a person linked with it is able to rece
 
 ## Input data
 
-Initially, the data of each account and its transactions is stored in a text file. The file structure is the following:
+Initially, the data of each account and its transactions are stored in a text file. The file structure is the following:
 
 
 ## Output
@@ -62,6 +62,7 @@ It's required an interactive menu with the following options
 
 * __1. Accounts:__ Lets the user add, modify, delete and check data
   1. *System's clients*: This is not to link bank accounts, only client's data, each ID number stored in the system is unique
+  2. *System's accounts*: This is to link bank accounts
 
 * __2. Payment:__ The data that the program should ask for is the following:
   1. Issuing person's ID, if it doesn't exist in the system give an option to link the *person* to the system or to cancel the transaction
@@ -86,9 +87,15 @@ It's required an interactive menu with the following options
 * __4. Exit:__ The program must facilitate the end of its execution
 
 ## Technologies
-* 
+* Visual Studio Code with the C/C++ extension
+* G++ Compiler
 
 ## Setup
+
+There's two tested ways to compile this code
+
+* __1. Windows CMD__: The command is the following `g++ P2-Bank.cpp -o P2-Bank`
+* __2. VSCode__:
 
 
 ## Status
