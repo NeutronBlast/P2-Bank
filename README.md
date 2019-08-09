@@ -92,11 +92,7 @@ It's required an interactive menu with the following options
 
 ## Setup
 
-There's two tested ways to compile this code
-
-* __1. Windows CMD__: The command is the following `g++ P2-Bank.cpp -o P2-Bank`
-* __2. VSCode__:
-
+Click the P2-Bank.exe file in this project's folder
 
 ## Status
 Project is: _In progress_
