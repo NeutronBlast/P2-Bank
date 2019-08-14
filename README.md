@@ -60,7 +60,7 @@ Initially, the data of each account and its transactions are stored in a text fi
 * __Line 3__: "*B" Represents that the list "accounts" will be filled
 * __Line 4__: Person's ID-Bank-Account's ID-Account type-Balance
 * __Line 5__: "*T" Represents that the list "transactions" will be filled
-* __Line 6__: Issuer's ID-Transaction's type-Issuer's account ID-Receiver's ID-Date-Amount-Description-Receiver's account ID
+* __Line 6__: Transaction's type-Issuer's account ID-Second party's ID-Date-Amount-Transaction's code-Description-Receiver's account ID
 
 ![Example](./img/exampleFile.png)
 

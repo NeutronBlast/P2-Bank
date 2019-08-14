@@ -8,12 +8,13 @@ typedef enum {FALSE = 0, TRUE} boolean;
 typedef struct trans {
     int code;
     int issuersAccsID;
+    int secondPartysAN;
     double amount;
     int type;
     char date [100];
     int secondPartysId;
     char description [41];
-    struct trans *next;
+    trans *next;
 } transaction;
 
 
@@ -109,17 +110,34 @@ void linkAccountMenu(){
         }
 }
 
+account * search (client *p, int accountID){
+	account *t = p->anext;
+    client * h = p;
+    while (h){
+        t = h->anext;
+	    while (t) {
+		    if ((t->id) == accountID) {
+                return t;
+		    }
+		t = t->next;
+	    }
+    h=h->next;
+    }
+    return t;
+}
+
 void fileExists(FILE *input, client **p){
     char line[1000]; char dat[1000];
     client *ax = new client;
     client *t = *p;
-    int clients = 0, accounts = 0, data = 0, j=0;
+    int clients = 0, accounts = 0, transactions = 0, data = 0, j=0;
     boolean listClients = FALSE;
     boolean listAccounts = FALSE;
+    boolean listTrans = FALSE; 
 
 /************************* AUX VARS *********************/
-    int auxid = 0, auxt = 0;
-    char auxb [50];
+    int auxid = 0, auxt = 0, auxsecondAID = 0, transcode = 0, auxsecondID;
+    char auxb [50], date [100], description[41];
     double auxbal = 0;
 
         while (!feof(input) && !ferror(input)){
@@ -128,8 +146,10 @@ void fileExists(FILE *input, client **p){
             if (line[0]=='*' && line[1]=='C'){
                 ax = new client;
                 accounts=0;
+                transactions=0;
                 listClients = TRUE;
-                listAccounts=FALSE;
+                listAccounts= FALSE;
+                listTrans = FALSE;
             }
 
             if (listClients == TRUE && line[0]!='*' && line[1]!='C'){
@@ -188,10 +208,12 @@ void fileExists(FILE *input, client **p){
 
             if (line[0]=='*' && line[1]=='B'){
                 listAccounts = TRUE;
+                listClients = FALSE;
+                listTrans = FALSE;
+                transactions = 0;
             }
 
             if (listAccounts == TRUE && line[0]!='*' && line[1]!='B'){
-                printf("here\n");
                 for (int i=0; i<=strlen(line); i++){
                     /* For each '-' it's a different variable to fill in the list */
                     if (line[i]!='-'){
@@ -206,7 +228,7 @@ void fileExists(FILE *input, client **p){
                         {
                         case 0:
                             auxid = strtol(dat, NULL, 10);
-                            printf("Numero de cuenta %d\n", auxid);
+                            //printf("Numero de cuenta %d\n", auxid);
                             break;
                         case 1: 
                             strcpy(auxb,"");
@@ -218,7 +240,7 @@ void fileExists(FILE *input, client **p){
                         case 3: 
                             char *ptr;
                             auxbal=strtod(dat, &ptr);
-                            printf("Balance %lf\n", auxbal);
+                            //printf("Balance %lf\n", auxbal);
                             data=-1;
                             break;
                         }
@@ -241,14 +263,18 @@ void fileExists(FILE *input, client **p){
                     acc->type = auxt;
                     acc->balance = auxbal;
                     acc->next = NULL;
-                        if (accounts == 0)
+                        if (accounts == 0){
                             ax->anext = acc;
+                            ax->anext->tnext = NULL;
+                        }
                         else {
                             acc2 = ax->anext;
                             while (acc2->next != NULL){
                                 acc2 = acc2->next;
                             }
+                        acc2->tnext = NULL;
                         acc2->next = acc;
+                        acc->tnext = NULL;
                         }
                 accounts++;
             } //End of if listAccounts == TRUE
@@ -259,11 +285,103 @@ void fileExists(FILE *input, client **p){
             if (line[0]=='*' && line[1]=='T'){
                 accounts=0;
                 listAccounts=FALSE;
-                //ax->anext = new account;
-                //listAccounts = TRUE;
+                listTrans = TRUE;
             }
 
-            
+            if (listTrans == TRUE && line[0]!='*' && line[1]!='T' && strlen(line)>1){
+                for (int i=0; i<=strlen(line); i++){
+                    /* For each '-' it's a different variable to fill in the list */
+                    if (line[i]!='-'){
+                        dat[j]=line[i];
+                        j++;
+                    }
+                    if (line[i]=='-' || i==strlen(line)){
+                        dat[j]='\0';
+                        j=0;
+                        //printf("dat %s\n", dat);
+                        switch (data)
+                        {
+                        case 0:
+                        /*Transaction type*/
+                            auxt = strtol(dat, NULL, 10);
+                            printf("Tipo de transaccion %d\n", auxt);
+                            break;
+                        case 1:
+                        /* Issuer's Account's ID */
+                            auxid = strtol(dat, NULL, 10); 
+                            printf("Numero de cuenta del emisor %d\n",auxid);
+                            break;
+                        case 2:
+                            auxsecondAID = strtol(dat,NULL,10);
+                            printf("Numero de cuenta de la otra persona involucrada %d\n",auxsecondAID);
+                            break;
+                        case 3:
+                            strcpy(date,"");
+                            strcpy(date,dat);
+                            break;
+                        case 4: 
+                            char *ptr;
+                            auxbal=strtod(dat, &ptr);
+                            printf("Monto %lf\n", auxbal);
+                            break;
+                        case 5:
+                            transcode = strtol(dat,NULL,10);
+                            printf("Codigo de transaccion %d\n", transcode);
+                            break;
+                        case 6:
+                            strcpy(description,"");
+                            strcpy(description,dat);
+                            break;
+                        case 7:
+                            auxsecondID = strtol (dat, NULL, 10);
+                            printf("Cedula de la otra persona involucrada %d\n", auxsecondID);
+                            data=-1;
+                            break;
+                        }
+
+                        strcpy(dat,"");
+                        data++;
+                        continue;
+                    } 
+                } //End of for
+
+                /*Insert at the end of the list*/
+                    transaction * tt = new transaction;
+                    transaction * tt2;
+
+                    if (tt==NULL){
+                            exit(1);
+                    }
+
+                    tt->type = auxt;
+                    tt->issuersAccsID = auxid;
+                    tt->secondPartysAN = auxsecondID;
+                    strcpy(tt->date,date);
+                    tt->amount = auxbal;
+                    tt->code = transcode;
+                    strcpy(tt->description,description);
+                    tt->secondPartysId = auxsecondAID;
+
+                    tt->next = NULL;
+
+                    client * as = *p;
+                    account * as2 = as->anext;
+                    
+                    as2 = search(as, auxid);
+
+                    if (as2->tnext == NULL){
+                        as2->tnext = tt;
+                    }
+
+                    else{
+                        tt2 = as2->tnext;
+                            while (tt2->next != NULL){
+                                tt2 = tt2->next;
+                            }
+                        tt2->next = tt;
+                    }
+                as = as->next;
+            } //End of if listAccounts == TRUE
 
             strcpy(line,"");    
         } //End of while !(eof)
