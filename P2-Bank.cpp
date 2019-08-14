@@ -13,7 +13,7 @@ typedef struct trans {
     char date [100];
     int secondPartysId;
     char description [41];
-    trans *next;
+    struct trans *next;
 } transaction;
 
 
@@ -170,6 +170,7 @@ void fileExists(FILE *input, client **p){
                 /*Insert at the beginning of the list*/
                     ax->next = *p;
                     *p = ax;
+                    ax->next = NULL;
                 }
                 else{
                 /*Insert at the end of the list*/
@@ -228,21 +229,29 @@ void fileExists(FILE *input, client **p){
                 } //End of for
 
                 /*Insert at the end of the list*/
-                    ax->anext = new account;
-                    t = *p;
-                    t->anext = (*p)->anext;
-                    ax->anext->id = auxid;
-                    strcpy(ax->anext->bank,auxb);
-                    ax->anext->type = auxt;
-                    ax->anext->balance = auxbal;
-                    ax->anext->next = NULL;
+                    account * acc = new account;
+                    account * acc2;
+
+                    if (acc==NULL){
+                            exit(1);
+                        }
+
+                    acc->id = auxid;
+                    strcpy(acc->bank,auxb);
+                    acc->type = auxt;
+                    acc->balance = auxbal;
+                    acc->next = NULL;
                         if (accounts == 0)
-                            (*p)->anext = ax->anext;
-                        else while(t->anext->next != NULL)
-                            t->anext=t->anext->next;
-                    t->anext->next = ax->anext;
+                            ax->anext = acc;
+                        else {
+                            acc2 = ax->anext;
+                            while (acc2->next != NULL){
+                                acc2 = acc2->next;
+                            }
+                        acc2->next = acc;
+                        }
                 accounts++;
-            } //End of if
+            } //End of if listAccounts == TRUE
 
 
 /***************************************** TRANSACTIONS *************************************************/
@@ -253,6 +262,8 @@ void fileExists(FILE *input, client **p){
                 //ax->anext = new account;
                 //listAccounts = TRUE;
             }
+
+            
 
             strcpy(line,"");    
         } //End of while !(eof)
