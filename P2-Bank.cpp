@@ -304,16 +304,16 @@ void fileExists(FILE *input, client **p){
                         case 0:
                         /*Transaction type*/
                             auxt = strtol(dat, NULL, 10);
-                            printf("Tipo de transaccion %d\n", auxt);
+                            //printf("Tipo de transaccion %d\n", auxt);
                             break;
                         case 1:
                         /* Issuer's Account's ID */
                             auxid = strtol(dat, NULL, 10); 
-                            printf("Numero de cuenta del emisor %d\n",auxid);
+                            //printf("Numero de cuenta del emisor %d\n",auxid);
                             break;
                         case 2:
                             auxsecondAID = strtol(dat,NULL,10);
-                            printf("Numero de cuenta de la otra persona involucrada %d\n",auxsecondAID);
+                            //printf("Numero de cuenta de la otra persona involucrada %d\n",auxsecondAID);
                             break;
                         case 3:
                             strcpy(date,"");
@@ -322,11 +322,11 @@ void fileExists(FILE *input, client **p){
                         case 4: 
                             char *ptr;
                             auxbal=strtod(dat, &ptr);
-                            printf("Monto %lf\n", auxbal);
+                            //printf("Monto %lf\n", auxbal);
                             break;
                         case 5:
                             transcode = strtol(dat,NULL,10);
-                            printf("Codigo de transaccion %d\n", transcode);
+                            //printf("Codigo de transaccion %d\n", transcode);
                             break;
                         case 6:
                             strcpy(description,"");
@@ -334,7 +334,7 @@ void fileExists(FILE *input, client **p){
                             break;
                         case 7:
                             auxsecondID = strtol (dat, NULL, 10);
-                            printf("Cedula de la otra persona involucrada %d\n", auxsecondID);
+                            //printf("Cedula de la otra persona involucrada %d\n", auxsecondID);
                             data=-1;
                             break;
                         }
@@ -398,6 +398,7 @@ boolean errorInFileStructure (FILE *input){
 
 /******************************** AUX VARS **********************************************/
     int auxi = 0;
+    double auxd = 0;
 
     while (!feof(input) && !ferror(input)){
         fgets(line, 1000, input);
@@ -406,6 +407,7 @@ boolean errorInFileStructure (FILE *input){
         listClients = TRUE;
         listAccounts = FALSE;
         listTrans = FALSE;
+        accounts = 0;
         continue;
     }
 
@@ -417,12 +419,12 @@ boolean errorInFileStructure (FILE *input){
         return TRUE;
     }
 
-    if (listClients == TRUE){
+    if (listClients == TRUE && line[0]!='*'){
         for (int i = 0; i<strlen(line); i++){
             if (line[i]=='-') sepCount++;
         }
 
-        if (sepCount>3 || sepCount<3){
+        if ((sepCount>3 || sepCount<3) && line[0]!='*'){
             printf("ERROR: Cada dato debe estar separado por un unico guion (-)\n");
             printf("Es posible que falten o sobren datos en la siguiente linea: %s", line);
             printf("Formato: Cedula-Nombre-Ciudad-Telefono\n");
@@ -451,30 +453,33 @@ boolean errorInFileStructure (FILE *input){
                         if (auxi == 0 || strlen(ptr)>1){
                             isThereError = TRUE;
                             printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
-                            printf("Simbolo detectado: %s\n", dat);
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
                         }
                         ptr=NULL;
                     break;
                     case 1: 
                         if (strlen(dat)>150){
                             isThereError = TRUE;
-                            printf("Nombre de cliente no puede ser mayor de 149 caracteres\n");
+                            printf("ERROR: Nombre de cliente no puede ser mayor de 149 caracteres\n");
+                            printf("Linea: %s\n",line);
                         }
                     break;
                     case 2:
                         if (strlen(dat)>200){
                             isThereError = TRUE;
-                            printf("Ciudad no puede ser mayor a 199 caracteres\n");
+                            printf("ERROR: Ciudad no puede ser mayor a 199 caracteres\n");
+                            printf("Linea: %s\n",line);
                         }
                     break;
                     case 3:
                         if (strlen(dat)>30){
                             isThereError = TRUE;
-                            printf("Numero de telefono no puede ser mayor a 29 caracteres\n");
+                            printf("ERROR: Numero de telefono no puede ser mayor a 29 caracteres\n");
+                            printf("Linea: %s\n", line);
                         } 
                         data=-1;
                         clients++;
-                        listClients = FALSE;
+                        //listClients = FALSE;
                     break;    
                 }
             strcpy(dat,"");
@@ -493,6 +498,95 @@ boolean errorInFileStructure (FILE *input){
         accounts = 0;
         continue;
     }
+
+    if ((accounts == 0 && line[0]!='*' && line[1]!='B' && listAccounts == FALSE && listClients == FALSE)){
+        printf("ERROR: Debe existir una linea *B para denotar las cuentas bancarias\n");
+        printf("Error en linea: %s",line);
+        printf("Ejemplo: *B\n");
+        printf("1111-1-2-11000\n");
+        return TRUE;
+    }
+
+    if (listAccounts == TRUE && line[0]!='*'){
+        for (int i = 0; i<strlen(line); i++){
+            if (line[i]=='-') sepCount++;
+        }
+
+        if (sepCount>3 || sepCount<3){
+            printf("ERROR: Cada dato debe estar separado por un unico guion (-)\n");
+            printf("Es posible que falten o sobren datos en la siguiente linea: %s", line);
+            printf("Formato: Numero de cuenta-Codigo de banco-Tipo de cuenta-Saldo\n");
+            printf("Ejemplo de uso correcto: 1122-2-1-11001\n");
+            return TRUE;
+        }
+        else{
+            sepCount=0;
+            j = 0;
+        }
+
+        for (int i=0; i<=strlen(line); i++){
+        /* For each '-' it's a different variable to fill in the list */
+            if (line[i]!='-'){
+                dat[j]=line[i];
+                j++;
+            }
+            
+            if (line[i]=='-' || i==strlen(line)){
+                dat[j]='\0';
+                j=0;
+                //printf("dat %s\n", dat);
+                switch (data){
+                    case 0:
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Numero de cuenta de el cliente debe ser un numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                        ptr=NULL;
+                    break;
+                    case 1: 
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Codigo de banco debe ser un numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                        ptr=NULL;
+                    break;
+                    case 2:
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Tipo de cuenta ser un numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                        if (auxi != 1 && auxi != 2){
+                            isThereError = TRUE;
+                            printf("ERROR: Tipo de cuenta debe ser 1: Corriente o 2: Ahorro\n");
+                            printf("Se detecto el siguiente simbolo invalido: %s en la linea %s", dat,line);
+                        }
+                        ptr=NULL;
+                    break;
+                    case 3:
+                        auxd=strtod(dat, &ptr);
+                            if (auxd == 0 || strlen(ptr)>1){
+                                isThereError = TRUE;
+                                printf("ERROR: Balance de cuenta debe ser un numero entero positivo mayor a 0\n");
+                                printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                            }
+
+                        data=-1;
+                        accounts++;
+                        listAccounts = FALSE;
+                    break;    
+                }
+            strcpy(dat,"");
+            data++;
+            continue;
+            } // End of if (line[i]=='-' || i==strlen(line))
+            } //End of for
+        } // End of if listAccounts == TRUE
 
     }
     fclose(input);
@@ -517,6 +611,7 @@ void loadFromFile(client **p){
                     fp = fopen (path, "r");
                     fileExists(fp, p);
                 }
+            system("pause");
             }
 }
 
