@@ -388,9 +388,121 @@ void fileExists(FILE *input, client **p){
     fclose(input);
 }
 
+boolean errorInFileStructure (FILE *input){
+    char line[1000]; char dat[1000]; char *ptr = NULL;
+    int clients = 0, accounts = 0, transactions = 0, data = 0, j = 0, sepCount = 0;
+    boolean listClients = FALSE;
+    boolean listAccounts = FALSE;
+    boolean listTrans = FALSE;
+    boolean isThereError = FALSE;
+
+/******************************** AUX VARS **********************************************/
+    int auxi = 0;
+
+    while (!feof(input) && !ferror(input)){
+        fgets(line, 1000, input);
+
+    if (line[0]=='*' && line[1]=='C'){
+        listClients = TRUE;
+        listAccounts = FALSE;
+        listTrans = FALSE;
+        continue;
+    }
+
+    if ((clients == 0 && line[0]!='*' && line[1]!='C' && listClients == FALSE)){
+        printf("ERROR: Debe existir una linea *C para denotar a los clientes\n");
+        printf("Error en linea: %s\n",line);
+        printf("Ejemplo: *C\n");
+        printf("1111-Pedro Perez-Caracas-11111\n");
+        return TRUE;
+    }
+
+    if (listClients == TRUE){
+        for (int i = 0; i<strlen(line); i++){
+            if (line[i]=='-') sepCount++;
+        }
+
+        if (sepCount>3 || sepCount<3){
+            printf("ERROR: Cada dato debe estar separado por un unico guion (-)\n");
+            printf("Es posible que falten o sobren datos en la siguiente linea: %s", line);
+            printf("Formato: Cedula-Nombre-Ciudad-Telefono\n");
+            printf("Ejemplo de uso correcto: 1111-Pedro Perez-Caracas-11111\n");
+            return TRUE;
+        }
+        else{
+            sepCount=0;
+            j = 0;
+        }
+
+        for (int i=0; i<=strlen(line); i++){
+        /* For each '-' it's a different variable to fill in the list */
+            if (line[i]!='-'){
+                dat[j]=line[i];
+                j++;
+            }
+            
+            if (line[i]=='-' || i==strlen(line)){
+                dat[j]='\0';
+                j=0;
+                //printf("dat %s\n", dat);
+                switch (data){
+                    case 0:
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s\n", dat);
+                        }
+                        ptr=NULL;
+                    break;
+                    case 1: 
+                        if (strlen(dat)>150){
+                            isThereError = TRUE;
+                            printf("Nombre de cliente no puede ser mayor de 149 caracteres\n");
+                        }
+                    break;
+                    case 2:
+                        if (strlen(dat)>200){
+                            isThereError = TRUE;
+                            printf("Ciudad no puede ser mayor a 199 caracteres\n");
+                        }
+                    break;
+                    case 3:
+                        if (strlen(dat)>30){
+                            isThereError = TRUE;
+                            printf("Numero de telefono no puede ser mayor a 29 caracteres\n");
+                        } 
+                        data=-1;
+                        clients++;
+                        listClients = FALSE;
+                    break;    
+                }
+            strcpy(dat,"");
+            data++;
+            continue;
+            } // End of if (line[i]=='-' || i==strlen(line))
+            } //End of for
+        } // End of if listClients == TRUE
+
+
+/******************************************** ACCOUNTS **********************************************/
+    if (line[0]=='*' && line[1]=='B'){
+        listClients = FALSE;
+        listAccounts = TRUE;
+        listTrans = FALSE;
+        accounts = 0;
+        continue;
+    }
+
+    }
+    fclose(input);
+    return isThereError;
+}
+
 void loadFromFile(client **p){
     char path[1024];
     FILE *fp;
+    boolean theresError = FALSE;
         printf("Especifique ruta de archivo\n");
         scanf("%s", &path);
         fp = fopen(path, "r");
@@ -399,8 +511,12 @@ void loadFromFile(client **p){
             }
             else {
                 printf("Archivo cargado con exito\n");
-                fileExists(fp, p);
-                system("pause");
+                theresError = errorInFileStructure(fp);
+                if (!theresError){
+                    //printf("Archivo sin errores\n");
+                    fp = fopen (path, "r");
+                    fileExists(fp, p);
+                }
             }
 }
 

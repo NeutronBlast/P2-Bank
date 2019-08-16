@@ -62,6 +62,8 @@ Initially, the data of each account and its transactions are stored in a text fi
 * __Line 5__: "*T" Represents that the list "transactions" will be filled
 * __Line 6__: Transaction's type-Issuer's account ID-Second party's ID-Date-Amount-Transaction's code-Description-Receiver's account ID
 
+The program must validate all the possible errors in the file structure before loading the information
+
 ![Example](./img/exampleFile.png)
 
 ## Output
