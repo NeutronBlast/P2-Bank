@@ -390,7 +390,7 @@ void fileExists(FILE *input, client **p){
 
 boolean errorInFileStructure (FILE *input){
     char line[1000]; char dat[1000]; char *ptr = NULL;
-    int clients = 0, accounts = 0, transactions = 0, data = 0, j = 0, sepCount = 0;
+    int clients = -1, accounts = -1, transactions = -1, data = 0, j = 0, sepCount = 0;
     boolean listClients = FALSE;
     boolean listAccounts = FALSE;
     boolean listTrans = FALSE;
@@ -403,11 +403,15 @@ boolean errorInFileStructure (FILE *input){
     while (!feof(input) && !ferror(input)){
         fgets(line, 1000, input);
 
+    if (line[0]=='\n') continue;
+
     if (line[0]=='*' && line[1]=='C'){
         listClients = TRUE;
         listAccounts = FALSE;
         listTrans = FALSE;
-        accounts = 0;
+        accounts = -1;
+        clients = 0;
+        transactions = -1;
         continue;
     }
 
@@ -495,7 +499,9 @@ boolean errorInFileStructure (FILE *input){
         listClients = FALSE;
         listAccounts = TRUE;
         listTrans = FALSE;
+        clients = -1;
         accounts = 0;
+        transactions = -1;
         continue;
     }
 
@@ -558,7 +564,7 @@ boolean errorInFileStructure (FILE *input){
                         auxi = strtol(dat, &ptr, 10);
                         if (auxi == 0 || strlen(ptr)>1){
                             isThereError = TRUE;
-                            printf("ERROR: Tipo de cuenta ser un numero entero positivo mayor a cero \n");
+                            printf("ERROR: Tipo de cuenta debe ser un numero entero positivo mayor a cero \n");
                             printf("Simbolo detectado: %s en linea %s\n", dat, line);
                         }
                         if (auxi != 1 && auxi != 2){
@@ -587,6 +593,162 @@ boolean errorInFileStructure (FILE *input){
             } // End of if (line[i]=='-' || i==strlen(line))
             } //End of for
         } // End of if listAccounts == TRUE
+
+/******************************************** TRANSACTIONS **********************************************/
+    if (line[0]=='*' && line[1]=='T'){
+        listClients = FALSE;
+        listAccounts = FALSE;
+        listTrans = TRUE;
+        transactions = 0;
+        continue;
+    }
+
+    if ((transactions == 0 && line[0]!='*' && line[1]!='T' && 
+    listAccounts == FALSE && listClients == FALSE && listTrans == FALSE)){
+        printf("ERROR: Debe existir una linea *T para denotar las transacciones\n");
+        printf("Error en linea: %s",line);
+        printf("Ejemplo: *T\n");
+        printf("2-1122-4444-Mon Apr 10 18:00:00 2018-200-2-Compra online-4444\n");
+        return TRUE;
+    }
+
+    if (listTrans == TRUE && line[0]!='*'){
+        for (int i = 0; i<strlen(line); i++){
+            if (line[i]=='-') sepCount++;
+        }
+
+        if (sepCount>7 || sepCount<7){
+            printf("ERROR: Cada dato debe estar separado por un unico guion (-)\n");
+            printf("Es posible que falten o sobren datos en la siguiente linea: %s", line);
+            printf("Formato: Tipo de transaccion-Numero de cuenta emisor-Cedula de receptor-");
+            printf("Fecha-Monto-Codigo de transaccion-Descripcion-Numero de cuenta de receptor\n");
+            printf("1-1111-5555-Sun Feb 15 22:00:00 2018-800-13-reparacion de computador-5555\n");
+            return TRUE;
+        }
+        else{
+            sepCount=0;
+            j = 0;
+        }
+
+        for (int i=0; i<=strlen(line); i++){
+        /* For each '-' it's a different variable to fill in the list */
+            if (line[i]!='-'){
+                dat[j]=line[i];
+                j++;
+            }
+            
+            if (line[i]=='-' || i==strlen(line)){
+                dat[j]='\0';
+                j=0;
+                //printf("dat %s\n", dat);
+                switch (data){
+                    case 0:
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Tipo de transaccion debe ser numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                        if (auxi != 1 && auxi != 2){
+                            isThereError = TRUE;
+                            printf("ERROR: Tipo de transaccion debe ser 1: Pago o 2: Cobro\n");
+                            printf("Se detecto el siguiente simbolo invalido: %s en la linea %s", dat,line);
+                        }
+                        ptr=NULL;
+                    break;
+                    case 1:
+                    auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Numero de cuenta del emisor debe ser numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                    ptr=NULL;
+                    break;
+                    case 2:
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Cedula del receptor debe ser numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                    ptr=NULL;
+                    break;
+                    case 3:
+                        char auxs[40];
+                        boolean dateFormatError;
+                        strncpy(auxs, dat, 3);
+                        auxs[3]='\0';
+                        if (strcmp("Mon",auxs) != 0 || strcmp("Tue",auxs) != 0 || strcmp("Wed",auxs) != 0
+                        || strcmp("Thu",auxs) != 0 || strcmp("Fri",auxs) != 0 || strcmp("Sat",auxs) != 0
+                        || strcmp("Sun",auxs) != 0)
+                            dateFormatError = TRUE;
+                        
+                        strcpy(auxs,"");
+                        strncpy(auxs, dat+4, 3);
+                        auxs[3]='\0';
+                        
+                        if (strcmp("Jan",auxs) != 0 || strcmp("Feb",auxs) != 0 || strcmp("Mar",auxs) != 0
+                        || strcmp("Apr",auxs) != 0 || strcmp("May",auxs) != 0 || strcmp("Jun",auxs) != 0
+                        || strcmp("Jul",auxs) != 0 || strcmp("Aug",auxs) != 0 || strcmp("Sep",auxs) != 0
+                        || strcmp("Oct",auxs) != 0 || strcmp("Nov",auxs) != 0 || strcmp("Dec",auxs) != 0)
+                            dateFormatError = TRUE;
+                        
+                        strcpy(auxs,"");
+                        strncpy(auxs, dat+8, 2);
+                        auxs[2]='\0';
+
+                        if (auxs[0]==' '){
+                            if (auxs[1]<48 || auxs[1]<57);
+                                dateFormatError = TRUE;
+                            ptr=NULL;
+                        }
+                        else{
+                            auxi = strtol(auxs, &ptr, 10);
+                                if (!auxi || auxi>31){
+                                    dateFormatError = TRUE;
+                                }
+                            ptr=NULL;
+                        }
+
+                    break;
+
+                    case 4: 
+                        auxd=strtod(dat, &ptr);
+                            if (auxd == 0 || strlen(ptr)>1){
+                                isThereError = TRUE;
+                                printf("ERROR: Monto de transaccion debe ser un numero entero positivo mayor a 0\n");
+                                printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                            }
+                        ptr=NULL;
+                    break;
+                    case 5:
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Codigo de transaccion debe ser un numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                        ptr=NULL;
+                    break;
+                    case 6:
+                        if (strlen(dat)>40){
+                            isThereError = TRUE;
+                            printf("ERROR: Descripcion de la transaccion no debe sobrepasar los 40 caracteres\n");
+                        }
+                    break;    
+                    case 7:
+                        data=-1;
+                        transactions++;
+                        listTrans = FALSE;
+                    break;
+                }
+            strcpy(dat,"");
+            data++;
+            continue;
+            } // End of if (line[i]=='-' || i==strlen(line))
+            } //End of for
+        } // End of if listTrans == TRUE
 
     }
     fclose(input);
