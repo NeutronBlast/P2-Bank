@@ -584,7 +584,6 @@ boolean errorInFileStructure (FILE *input){
 
                         data=-1;
                         accounts++;
-                        listAccounts = FALSE;
                     break;    
                 }
             strcpy(dat,"");
@@ -679,38 +678,112 @@ boolean errorInFileStructure (FILE *input){
                         boolean dateFormatError;
                         strncpy(auxs, dat, 3);
                         auxs[3]='\0';
-                        if (strcmp("Mon",auxs) != 0 || strcmp("Tue",auxs) != 0 || strcmp("Wed",auxs) != 0
-                        || strcmp("Thu",auxs) != 0 || strcmp("Fri",auxs) != 0 || strcmp("Sat",auxs) != 0
-                        || strcmp("Sun",auxs) != 0)
+                        /* Day */
+                        if (strcmp("Mon",auxs) != 0 && strcmp("Tue",auxs) != 0 && strcmp("Wed",auxs) != 0
+                        && strcmp("Thu",auxs) != 0 && strcmp("Fri",auxs) != 0 && strcmp("Sat",auxs) != 0
+                        && strcmp("Sun",auxs) != 0){
                             dateFormatError = TRUE;
+                        }
                         
                         strcpy(auxs,"");
                         strncpy(auxs, dat+4, 3);
                         auxs[3]='\0';
                         
-                        if (strcmp("Jan",auxs) != 0 || strcmp("Feb",auxs) != 0 || strcmp("Mar",auxs) != 0
-                        || strcmp("Apr",auxs) != 0 || strcmp("May",auxs) != 0 || strcmp("Jun",auxs) != 0
-                        || strcmp("Jul",auxs) != 0 || strcmp("Aug",auxs) != 0 || strcmp("Sep",auxs) != 0
-                        || strcmp("Oct",auxs) != 0 || strcmp("Nov",auxs) != 0 || strcmp("Dec",auxs) != 0)
+                        /* Month */
+                        if (strcmp("Jan",auxs) != 0 && strcmp("Feb",auxs) != 0 && strcmp("Mar",auxs) != 0
+                        && strcmp("Apr",auxs) != 0 && strcmp("May",auxs) != 0 && strcmp("Jun",auxs) != 0
+                        && strcmp("Jul",auxs) != 0 && strcmp("Aug",auxs) != 0 && strcmp("Sep",auxs) != 0
+                        && strcmp("Oct",auxs) != 0 && strcmp("Nov",auxs) != 0 && strcmp("Dec",auxs) != 0){
                             dateFormatError = TRUE;
-                        
+                        }
+
+                        /* Date */
                         strcpy(auxs,"");
                         strncpy(auxs, dat+8, 2);
                         auxs[2]='\0';
 
-                        if (auxs[0]==' '){
-                            if (auxs[1]<48 || auxs[1]<57);
+                        if (auxs[0]==' ' || auxs[0]=='0'){
+                            if (auxs[1]<48 || auxs[1]>57)
                                 dateFormatError = TRUE;
                             ptr=NULL;
                         }
                         else{
                             auxi = strtol(auxs, &ptr, 10);
-                                if (!auxi || auxi>31){
+                                if (auxi == 0 || auxi>31){
+                                    dateFormatError = TRUE;
+                                }
+                            ptr=NULL;
+
+                        }
+
+                        /* Hour */
+
+                        strcpy(auxs,"");
+                        strncpy(auxs, dat+11, 2);
+                        auxs[2]='\0';
+
+
+                        if (auxs[0]=='0' || auxs[1]=='0'){
+                            ptr=NULL;
+                        }
+                        else{
+                            auxi = strtol(auxs, &ptr, 10);
+                                if (auxi == 0 || auxi>23){
                                     dateFormatError = TRUE;
                                 }
                             ptr=NULL;
                         }
 
+                        /* Minutes */
+
+                        strcpy(auxs,"");
+                        strncpy(auxs, dat+14, 2);
+                        auxs[2]='\0';
+
+                        if (auxs[0]=='0' || auxs[1]=='0'){
+                            ptr=NULL;
+                        }
+                        else{
+                            auxi = strtol(auxs, &ptr, 10);
+                                if (auxi == 0 || auxi>59){
+                                    dateFormatError = TRUE;
+                                }
+                            ptr=NULL;
+                        }
+
+                        /* Seconds */
+
+                        strcpy(auxs,"");
+                        strncpy(auxs, dat+17, 2);
+                        auxs[2]='\0';
+
+                        if (auxs[0]=='0' || auxs[1]=='0'){
+                            ptr=NULL;
+                        }
+                        else{
+                            auxi = strtol(auxs, &ptr, 10);
+                                if (auxi == 0 || auxi>59){
+                                    dateFormatError = TRUE;
+                                }
+                            ptr=NULL;
+                        }
+
+                        /* Year */
+
+                        strcpy(auxs,"");
+                        strncpy(auxs, dat+20, 4);
+                        auxs[4]='\0';
+
+                        auxi = strtol(auxs, &ptr, 10);
+                            if (auxi == 0){
+                                dateFormatError = TRUE;
+                            }
+                        ptr=NULL;
+
+                        if (dateFormatError == TRUE){
+                            printf("Formato de fecha invalido. Ejemplo valido: Sun Aug 14 14:00:00\n");
+                            printf("Simbolo invalido detectado en linea: %s\n",line);
+                        }
                     break;
 
                     case 4: 
@@ -735,12 +808,19 @@ boolean errorInFileStructure (FILE *input){
                         if (strlen(dat)>40){
                             isThereError = TRUE;
                             printf("ERROR: Descripcion de la transaccion no debe sobrepasar los 40 caracteres\n");
+                            printf("Detectado en linea %s\n",line);
                         }
                     break;    
                     case 7:
+                        auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            isThereError = TRUE;
+                            printf("ERROR: Numero de cuenta de receptor debe ser un numero entero positivo mayor a cero \n");
+                            printf("Simbolo detectado: %sEn linea %s\n", dat, line);
+                        }
+                        ptr=NULL;
                         data=-1;
                         transactions++;
-                        listTrans = FALSE;
                     break;
                 }
             strcpy(dat,"");
@@ -782,7 +862,7 @@ void showMenu(){
     int op=-1;
         while (op){
             printf("\n*** Sistema de pagos y cobros P2Bank ***\n\n");
-            printf("    \t 1. Cuentas\n");
+            printf("    \t 1. Cuentas y clientes\n");
             printf("    \t 2. Opciones de pagos\n");
             printf("    \t 3. Consultas varias\n");
             printf("    \t 4. Cargar datos desde archivo\n");
