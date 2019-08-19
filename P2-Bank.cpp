@@ -111,16 +111,22 @@ void linkAccountMenu(){
 }
 
 account * search (client *p, int accountID){
-	account *t = p->anext;
+	account *t = NULL;
+    if (p->anext != NULL)
+        t = p->anext;
+
     client * h = p;
+
     while (h){
-        t = h->anext;
-	    while (t) {
-		    if ((t->id) == accountID) {
-                return t;
-		    }
-		t = t->next;
-	    }
+        if (h->anext != NULL){
+            t = h->anext;
+	        while (t) {
+		        if ((t->id) == accountID) {
+                    return t;
+		        }
+		    t = t->next;
+	        }
+        }
     h=h->next;
     }
     return t;
@@ -213,6 +219,7 @@ void fileExists(FILE *input, client **p){
                         while(t->next != NULL)
                             t=t->next;
                     t->next = ax;
+                    t->next->anext = NULL;
                 }
                 clients++;
                 listClients=FALSE;
@@ -382,6 +389,11 @@ void fileExists(FILE *input, client **p){
                     account * as2 = as->anext;
                     
                     as2 = search(as, auxid);
+
+                /* If no transactions, do nothing */
+                    if (as2 == NULL){
+                        continue;
+                    }
 
                     if (as2->tnext == NULL){
                         as2->tnext = tt;
