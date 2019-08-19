@@ -126,6 +126,20 @@ account * search (client *p, int accountID){
     return t;
 }
 
+boolean isUnique (int * x, int capacity, int number){
+    for (int i = 0; i<=capacity; i++){
+        if (number == x[i]) return FALSE;
+    }
+    return TRUE;
+}
+
+boolean bankAccountExists (int * x, int * y, int capacity, int number, int codbank){
+    for (int i = 0; i<=capacity; i++){
+        if (number == x[i] && codbank == y[i]) return TRUE;
+    }
+    return FALSE;
+}
+
 void fileExists(FILE *input, client **p){
     char line[1000]; char dat[1000];
     client *ax = new client;
@@ -399,12 +413,24 @@ boolean errorInFileStructure (FILE *input){
 /******************************** AUX VARS **********************************************/
     int auxi = 0;
     double auxd = 0;
+    int capacity = 5;
+    int auxAC = 0;
+    int auxCB = 0;
+    int auxTC = 0;
+    int * people = (int*)malloc(sizeof(int)*capacity);
+    int * accNumbers = (int*)malloc(sizeof(int)*capacity);
+    int * bankIDs = (int*)malloc(sizeof(int)*capacity);
+    int * transCodes = (int*)malloc(sizeof(int)*capacity);
+    int usedp = 0;
+    int useda = 0;
+    int usedt = 0;
 
     while (!feof(input) && !ferror(input)){
         fgets(line, 1000, input);
 
     if (line[0]=='\n') continue;
 
+/************************************* CLIENTS **************************************************/
     if (line[0]=='*' && line[1]=='C'){
         listClients = TRUE;
         listAccounts = FALSE;
@@ -459,6 +485,8 @@ boolean errorInFileStructure (FILE *input){
                             printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
                             printf("Simbolo detectado: %s en linea %s\n", dat, line);
                         }
+                        else{
+                        }
                         ptr=NULL;
                     break;
                     case 1: 
@@ -483,6 +511,22 @@ boolean errorInFileStructure (FILE *input){
                         } 
                         data=-1;
                         clients++;
+
+                        /* For the array*/
+                        if (usedp>0)
+                            if (isUnique(people,capacity,auxi) == FALSE){
+                                printf("ERROR: Numero de cedula en linea %s ya existe en el sistema\n", line);
+                                return TRUE;
+                            }
+
+                        people[usedp] = auxi;
+                        usedp++;
+                            if (usedp == 5){
+                                capacity*=2;
+                                /* Expand vector capacity */
+                                people = (int*)realloc(people,sizeof(int)*capacity);
+                            }
+                        //printf("Client[%d] = %d\n", usedp-1,auxi);
                         //listClients = FALSE;
                     break;    
                 }
@@ -549,7 +593,11 @@ boolean errorInFileStructure (FILE *input){
                             printf("ERROR: Numero de cuenta de el cliente debe ser un numero entero positivo mayor a cero \n");
                             printf("Simbolo detectado: %s en linea %s\n", dat, line);
                         }
+                        else{
+                            auxAC = auxi;
+                        }
                         ptr=NULL;
+                        
                     break;
                     case 1: 
                         auxi = strtol(dat, &ptr, 10);
@@ -557,6 +605,9 @@ boolean errorInFileStructure (FILE *input){
                             isThereError = TRUE;
                             printf("ERROR: Codigo de banco debe ser un numero entero positivo mayor a cero \n");
                             printf("Simbolo detectado: %s en linea %s\n", dat, line);
+                        }
+                        else{
+                            auxCB = auxi;
                         }
                         ptr=NULL;
                     break;
@@ -581,7 +632,26 @@ boolean errorInFileStructure (FILE *input){
                                 printf("ERROR: Balance de cuenta debe ser un numero entero positivo mayor a 0\n");
                                 printf("Simbolo detectado: %s en linea %s\n", dat, line);
                             }
+                        if (isThereError == FALSE){
+                        /* For the array*/
+                        if (useda>0)
+                            if (bankAccountExists(accNumbers,bankIDs,capacity,auxAC,auxCB) == TRUE){
+                                printf("ERROR: Numero de cuenta %d en banco %d ya existe en el sistema, linea: %s\n",auxAC, auxCB, line);
+                                return TRUE;
+                            }
 
+                        accNumbers[useda] = auxAC;
+                        bankIDs[useda] = auxCB;
+                        useda++;
+                            if (useda == 5){
+                                capacity*=2;
+                                /* Expand vector capacity */
+                                accNumbers = (int*)realloc(accNumbers,sizeof(int)*capacity);
+                                bankIDs = (int*)realloc(bankIDs,sizeof(int)*capacity);
+
+                            }
+                        //printf("%d - Bank: %d , ID: %d \n", useda-1,auxCB,auxAC);
+                        }
                         data=-1;
                         accounts++;
                     break;    
@@ -802,6 +872,10 @@ boolean errorInFileStructure (FILE *input){
                             printf("ERROR: Codigo de transaccion debe ser un numero entero positivo mayor a cero \n");
                             printf("Simbolo detectado: %s en linea %s\n", dat, line);
                         }
+                        else{
+                            auxTC = auxi;
+                        }
+
                         ptr=NULL;
                     break;
                     case 6:
@@ -819,6 +893,22 @@ boolean errorInFileStructure (FILE *input){
                             printf("Simbolo detectado: %sEn linea %s\n", dat, line);
                         }
                         ptr=NULL;
+
+                    /* For the array*/
+                        if (usedt>0)
+                            if (isUnique(transCodes,capacity,auxTC) == FALSE){
+                                printf("ERROR: Codigo de transaccion %d ya existe en el sistema, linea %s \n", auxTC, line);
+                                return TRUE;
+                            }
+
+                        transCodes[usedt] = auxTC;
+                        usedt++;
+                            if (usedt == 5){
+                                capacity*=2;
+                                /* Expand vector capacity */
+                                transCodes = (int*)realloc(transCodes,sizeof(int)*capacity);
+                            }
+                        //printf("Trans[%d] = %d\n", usedp-1,auxTC);
                         data=-1;
                         transactions++;
                     break;
@@ -832,6 +922,7 @@ boolean errorInFileStructure (FILE *input){
 
     }
     fclose(input);
+    //printf("Clients total %d\n",usedp);
     return isThereError;
 }
 

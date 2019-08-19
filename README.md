@@ -38,7 +38,7 @@ The essential idea of the system is that a person linked with it is able to rece
    1. Transaction code (unique number)
    2. Amount
    3. Type of transaction (payment/receiving money)
-   4. Date and time
+   4. Date and time (Wished format example: Sun Mar 12 22:00:00 2018)
    5. ID of the person involved in the transaction
    6. Description (40 characters max)
 
