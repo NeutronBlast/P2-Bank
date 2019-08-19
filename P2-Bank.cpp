@@ -74,8 +74,180 @@ void checkTransactionsMenu(){
         }
 }
 
-void linkAccountMenu(){
+client * clientExists (client *p, int id){
+    client *t = p;
+        while (t)
+        {
+            if (t->id == id) 
+                return t;
+            t=t->next;
+        }
+    return NULL;
+}
+
+void addClient (client ** p){
+    client *ax = new client, *t = *p, *verif = NULL;
+    char dat[1000]; char *ptr = NULL;
+    int auxi = 0;
+    boolean alrExists;
+
+    strcpy(dat,"");
+
+    /* Ask for the data */
+    do
+    {
+        printf("Numero de cedula\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+            verif = clientExists(t,auxi);
+            if (verif){
+                printf("ERROR: Numero de cedula ingresado ya existe en el sistema\n");
+            }
+    } while (auxi == 0 || strlen(ptr)>1 || verif);
+
+    ax->id = auxi;
+    
+    strcpy(dat,"");
+    fflush(stdin);
+
+    do
+    {
+        printf("Nombre de cliente (No mayor a 149 caracteres)\n");
+        scanf("%s",&dat);
+            if (strlen(dat)>150){
+                printf("ERROR: Nombre de cliente no puede ser mayor de 149 caracteres\n");
+            }
+    } while (strlen(dat)>150);
+    
+    strcpy(ax->name,dat);
+    strcpy(dat,"");
+    fflush(stdin);
+
+    do
+    {
+        printf("Ciudad (No mayor a 199 caracteres)\n");
+        scanf("%s",&dat);
+            if (strlen(dat)>199){
+                printf("ERROR: Ciudad no puede ser mayor a 199 caracteres\n");
+            }
+    } while (strlen(dat)>199);
+
+    strcpy(ax->city,dat);
+    strcpy(dat,"");
+
+    do
+    {
+        printf("Telefono (No mayor a 29 caracteres)\n");
+        scanf("%s",&dat);
+            if (strlen(dat)>29){
+                printf("ERROR: Numero de telefono no puede ser mayor a 29 caracteres\n");
+            }
+    } while (strlen(dat)>29);
+
+    strcpy(ax->phone,dat);
+
+    if (t==NULL){
+    /*Insert at the beginning of the list*/
+        ax->next = *p;
+        *p = ax;
+        ax->next = NULL;
+    }
+    
+    else{
+    /*Insert at the end of the list*/
+        t = *p;
+        ax->next = NULL;
+            while(t->next != NULL)
+                t=t->next;
+            t->next = ax;
+            t->next->anext = NULL;
+    }
+}
+
+/*void modifyClient (client ** p){
+    client *ax = new client, *t = *p, *verif = NULL;
+    char dat[1000]; char *ptr = NULL;
+    int auxi = 0;
+    boolean alrExists;
+
+    strcpy(dat,"");
+
+    // ID number to modify the person with that ID 
+    do
+    {
+        printf("Numero de cedula\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+            verif = clientExists(t,auxi);
+            if (!verif){
+                printf("ERROR: Numero de cedula ingresado no existe en el sistema\n");
+            }
+    } while (auxi == 0 || strlen(ptr)>1 || !verif);
+
+    // Ask for the data 
+    do
+    {
+        printf("Nombre de cliente (No mayor a 149 caracteres)\n");
+        scanf("%s",&dat);
+            if (strlen(dat)>150){
+                printf("ERROR: Nombre de cliente no puede ser mayor de 149 caracteres\n");
+            }
+    } while (strlen(dat)>150);
+    
+    strcpy(ax->name,dat);
+    strcpy(dat,"");
+    fflush(stdin);
+
+    do
+    {
+        printf("Ciudad (No mayor a 199 caracteres)\n");
+        scanf("%s",&dat);
+            if (strlen(dat)>199){
+                printf("ERROR: Ciudad no puede ser mayor a 199 caracteres\n");
+            }
+    } while (strlen(dat)>199);
+
+    strcpy(ax->city,dat);
+    strcpy(dat,"");
+
+    do
+    {
+        printf("Telefono (No mayor a 29 caracteres)\n");
+        scanf("%s",&dat);
+            if (strlen(dat)>29){
+                printf("ERROR: Numero de telefono no puede ser mayor a 29 caracteres\n");
+            }
+    } while (strlen(dat)>29);
+
+    strcpy(ax->phone,dat);
+
+    if (t==NULL){
+    //Insert at the beginning of the list
+        ax->next = *p;
+        *p = ax;
+        ax->next = NULL;
+    }
+    
+    else{
+    //Insert at the end of the list
+        t = *p;
+        ax->next = NULL;
+            while(t->next != NULL)
+                t=t->next;
+            t->next = ax;
+            t->next->anext = NULL;
+    }
+}*/
+
+void linkAccountMenu(client ** p){
     int op=-1;
+    client * t = *p;
         if (op){
             printf("    *** Clientes del sistema ****\n");
             printf("    \t 1. Agregar cliente\n");
@@ -90,11 +262,17 @@ void linkAccountMenu(){
             switch (op)
             {
             case 1:
-                /* code */
+                addClient(&t);
+                printf("Cliente agregado con exito\n");
+                system("pause");
+                system("cls");
                 break;
 
             case 2:
-                /* code */
+                /* Insert data after the modified one, delete the previous one */
+                break;
+            
+            case 3:
                 break;
 
             case 0:
@@ -979,7 +1157,7 @@ void showMenu(){
             switch (op)
             {
             case 1:
-                linkAccountMenu();
+                linkAccountMenu(&c);
                 break;
 
             case 2:
