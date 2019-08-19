@@ -167,10 +167,29 @@ void addClient (client ** p){
     }
 }
 
-/*void modifyClient (client ** p){
+void deleteClient (client **p, int n){
+    client *t = *p, *verif = NULL;
+
+    if (t)
+        if (t->id == n){
+            *p = (*p)->next;
+            delete(t);
+        }
+        else{
+            while (t->next && t->next->id != n)
+                t = t->next;
+            if (t->next){
+                client * ax = t->next;
+                t->next = t->next->next;
+                delete(ax);
+            }
+        }
+}
+
+void modifyClient (client ** p){
     client *ax = new client, *t = *p, *verif = NULL;
     char dat[1000]; char *ptr = NULL;
-    int auxi = 0;
+    int auxi = 0, oldID = 0;
     boolean alrExists;
 
     strcpy(dat,"");
@@ -178,7 +197,7 @@ void addClient (client ** p){
     // ID number to modify the person with that ID 
     do
     {
-        printf("Numero de cedula\n");
+        printf("Numero de cedula de cliente a modificar\n");
         scanf("%s",&dat);
         auxi = strtol(dat, &ptr, 10);
             if (auxi == 0 || strlen(ptr)>1){
@@ -191,9 +210,31 @@ void addClient (client ** p){
     } while (auxi == 0 || strlen(ptr)>1 || !verif);
 
     // Ask for the data 
+    oldID = auxi;
+
     do
     {
-        printf("Nombre de cliente (No mayor a 149 caracteres)\n");
+        printf("Nuevo numero de cedula\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+            verif = clientExists(t,auxi);
+            if (verif && verif->id == auxi){
+                printf("Numero de cedula ingresado es el mismo que estaba anteriormente en este cliente\n");
+                ax->id = verif->id;
+                break;
+            }
+            if (verif){
+                printf("ERROR: Numero de cedula ingresado ya existe en el sistema\n");
+            }
+    } while (auxi == 0 || strlen(ptr)>1 || verif);
+
+    ax->id = auxi;
+    do
+    {
+        printf("Nuevo nombre de cliente (No mayor a 149 caracteres)\n");
         scanf("%s",&dat);
             if (strlen(dat)>150){
                 printf("ERROR: Nombre de cliente no puede ser mayor de 149 caracteres\n");
@@ -206,7 +247,7 @@ void addClient (client ** p){
 
     do
     {
-        printf("Ciudad (No mayor a 199 caracteres)\n");
+        printf("Nueva ciudad (No mayor a 199 caracteres)\n");
         scanf("%s",&dat);
             if (strlen(dat)>199){
                 printf("ERROR: Ciudad no puede ser mayor a 199 caracteres\n");
@@ -218,7 +259,7 @@ void addClient (client ** p){
 
     do
     {
-        printf("Telefono (No mayor a 29 caracteres)\n");
+        printf("Nuevo telefono (No mayor a 29 caracteres)\n");
         scanf("%s",&dat);
             if (strlen(dat)>29){
                 printf("ERROR: Numero de telefono no puede ser mayor a 29 caracteres\n");
@@ -227,27 +268,30 @@ void addClient (client ** p){
 
     strcpy(ax->phone,dat);
 
-    if (t==NULL){
-    //Insert at the beginning of the list
-        ax->next = *p;
-        *p = ax;
-        ax->next = NULL;
-    }
-    
-    else{
-    //Insert at the end of the list
-        t = *p;
-        ax->next = NULL;
-            while(t->next != NULL)
-                t=t->next;
-            t->next = ax;
-            t->next->anext = NULL;
-    }
-}*/
+    ax->next = NULL;
+    ax->anext = NULL;
+	if (!t) { //Si la lista esta vacia el valor x sera insertado al principio de la lista
+		*p = ax;
+	}
+	else
+		while ((t->next != NULL) && (t->next->id != oldID)) { //X es el valor que ira antes del nuevo valor
+			t = t->next;
+		}
+    if (ax->anext != NULL)
+        ax->anext = t->next->anext;
+
+    if (ax->anext != NULL){
+            ax->anext->tnext = t->next->anext->tnext;
+        }
+    ax->next = t->next->next;
+    deleteClient(&t,t->next->id);
+	t->next = ax;
+}
 
 void linkAccountMenu(client ** p){
-    int op=-1;
-    client * t = *p;
+    int op=-1, auxi = 0;
+    char * ptr = NULL; char dat [1000];
+    client * t = *p, *verif =  NULL;
         if (op){
             printf("    *** Clientes del sistema ****\n");
             printf("    \t 1. Agregar cliente\n");
@@ -269,10 +313,32 @@ void linkAccountMenu(client ** p){
                 break;
 
             case 2:
-                /* Insert data after the modified one, delete the previous one */
+                modifyClient(&t);
+                printf("Cliente modificado con exito\n");
+                system("pause");
+                system("cls");
                 break;
             
             case 3:
+            strcpy(dat,"");
+                do
+                {
+                    printf("Numero de cedula\n");
+                    scanf("%s",&dat);
+                    auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                        }
+                        verif = clientExists(t,auxi);
+
+                        if (!verif){
+                            printf("ERROR: Numero de cedula ingresado no existe en el sistema\n");
+                        }
+                } while (auxi == 0 || strlen(ptr)>1 || !verif);
+                deleteClient(&t,auxi);
+                printf("Cliente eliminado con exito\n");
+                system("pause");
+                system("cls");
                 break;
 
             case 0:
@@ -1149,8 +1215,6 @@ void showMenu(){
             printf("    \t 4. Cargar datos desde archivo\n");
             printf("    \t 5. Mostrar todos los datos\n");
             //Option 5 will be used to make the output file because the program has to access the whole nested list anyway
-            printf("    \t 6. Insertar datos manualmente\n");
-            //Option 6 will be used for something in option 1, for now it's just testing
             printf("    \t 0. Salir\n");
             scanf("%d",&op);
 
