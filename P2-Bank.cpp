@@ -167,22 +167,16 @@ void addClient (client ** p){
 }
 
 void deleteClient (client **p, int n){
-    client *t = *p, *verif = NULL;
+    client **ppn = p;           /* pointer to pointer to node*/
+    client *pn = *p;            /* pointer to node */
 
-    if (t)
-        if (t->id == n){
-            *p = (*p)->next;
-            delete(t);
+    for (; pn; ppn = &pn->next, pn = pn->next) {
+        if (pn->id == n) {
+            *ppn = pn->next;    /* set address to next */
+            delete(pn);
+            break;
         }
-        else{
-            while (t->next && t->next->id != n)
-                t = t->next;
-            if (t->next){
-                client * ax = t->next;
-                t->next = t->next->next;
-                delete(ax);
-            }
-        }
+    }
 }
 
 void modifyClient (client ** p){
@@ -269,11 +263,18 @@ void modifyClient (client ** p){
 
     ax->next = NULL;
     ax->anext = NULL;
-	if (!t) { //Si la lista esta vacia el valor x sera insertado al principio de la lista
-		*p = ax;
-	}
-	else
-		while ((t->next != NULL) && (t->next->id != oldID)) { //X es el valor que ira antes del nuevo valor
+
+    if (t->id == oldID && t->next == NULL){
+        (*p) = ax;
+    }
+    else if (t->id == oldID && t->next != NULL){
+        t->id = auxi;
+        strcpy(t->name,ax->name);
+        strcpy(t->city,ax->city);
+        strcpy(t->phone,ax->phone);
+    }
+	else{
+		while ((t->next != NULL) && (t->next->id != oldID)) { 
 			t = t->next;
 		}
     if (ax->anext != NULL)
@@ -285,6 +286,7 @@ void modifyClient (client ** p){
     ax->next = t->next->next;
     deleteClient(&t,t->next->id);
 	t->next = ax;
+    }
 }
 
 account * search (client *p, int accountID, int codbank){
@@ -305,6 +307,27 @@ account * search (client *p, int accountID, int codbank){
 	        }
         }
     h=h->next;
+    }
+    return t;
+}
+
+account * searchbyCID (client *p, int accountID, int codbank){
+    account *t = NULL;
+    if (p->anext != NULL)
+        t = p->anext;
+
+    client * h = p;
+
+    if (h){
+        if (h->anext != NULL){
+            t = h->anext;
+	        while (t) {
+		        if ((t->id) == accountID && t->bank == codbank) {
+                    return t;
+		        }
+		    t = t->next;
+	        }
+        }
     }
     return t;
 }
@@ -464,7 +487,7 @@ void deleteAccount (client **p, int n, int accid, int codbank){
         if (t->id == n){
             if (h){
                 if (h->id == accid && h->bank == codbank){
-                    t->anext = t->anext->next;
+                    (*p)->anext = (*p)->anext->next;
                     delete(h);
                 }
             else{
@@ -478,31 +501,157 @@ void deleteAccount (client **p, int n, int accid, int codbank){
             }
             }
         }
-
-        else{
-            while (t && t->id != n)
-                t = t->next;
-            if (t){
-                h = t->anext;
-                if (h){
-                    if(h->id == accid && h->bank == codbank){
-                        t->anext = t->anext->next;
-                        delete(h);
-                    }
-                else{
-                    while (h->next && h->next->id != accid && h->next->bank != codbank)
-                        h = h->next;
-                if (h->next){
-                    account * ax = h->next;
-                    h->next = h->next->next;
-                    delete(ax);  
-                }
-                }
-                }  
-        }
     }
 }
+
+void modifyAccount (client ** p){
+    client *t = *p, *verif = NULL;
+    account * ax = new account, *verify = NULL;
+    char dat[1000]; char *ptr = NULL;
+    int auxi = 0, cID = 0, oldID = 0, oldCB = 0, auxi2 = 0; 
+    double auxd = 0;
+    boolean ignore = FALSE;
+
+    strcpy(dat,"");
+
+    // ID number to modify the person with that ID 
+    do
+    {
+        printf("Numero de cedula de cliente a modificar\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+            verif = clientExists(t,auxi);
+            if (!verif){
+                printf("ERROR: Numero de cedula ingresado no existe en el sistema\n");
+            }
+    } while (auxi == 0 || strlen(ptr)>1 || !verif);
+
+    cID = auxi;
+    strcpy(dat,"");
+
+    do{
+        printf("Numero de cuenta\n");
+        scanf("%s",&dat);
+        oldID = strtol(dat, &ptr, 10);
+            if (oldID == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cuenta de el cliente debe ser un numero entero positivo mayor a cero \n");
+            }
+
+        strcpy(dat,"");
+        printf("Codigo de banco\n");
+        scanf("%s",&dat);
+        oldCB = strtol(dat, &ptr, 10);
+            if (oldCB == 0 || strlen(ptr)>1){
+                printf("ERROR: Codigo de banco de cuenta debe ser un numero entero positivo mayor a cero \n");
+            }
+        verify = searchbyCID(verif,oldID,oldCB);
+
+            if (!verify){
+                printf("ERROR: Numero cuenta ingresado asociado a este numero de cedula no existe en el sistema\n");
+            }
+        } while (oldID == 0 || oldCB == 0 || strlen(ptr)>1 || !verify);
+    
+
+    /* New data */
+    do
+    {
+        printf("Nuevo numero de cuenta\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cuenta de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+
+        strcpy(dat,"");
+        printf("Nuevo codigo de banco\n");
+        scanf("%s",&dat);
+        auxi2 = strtol(dat, &ptr, 10);
+            if (auxi2 == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cuenta de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+            verify = searchbyCID(verif,auxi,auxi2);
+            if (verify && verify->id == auxi && verify->bank == auxi2){
+                printf("Numero de cedula ingresado es el mismo que estaba anteriormente en este cliente\n");
+                ax->id = verify->id;
+                ax->bank = verify->bank;
+                break;
+            }
+
+    } while (auxi == 0 || auxi2 == 0 || strlen(ptr)>1);
+
+    ptr = NULL;
+    ax->id = auxi;
+    ax->bank = auxi2;
+    
+
+    //Account type 
+
+    do
+    {
+        printf("Nuevo tipo de cuenta\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Tipo de cuenta debe ser un numero entero positivo mayor a cero \n");
+            }
+            
+            if (auxi != 1 && auxi != 2){
+                printf("ERROR: Tipo de cuenta debe ser 1: Corriente o 2: Ahorro\n");
+            }
+    } while (auxi == 0 || strlen(ptr)>1 || (auxi != 1 && auxi != 2));
+    
+    ptr = NULL;
+    ax->type = auxi;
+    strcpy(dat,"");
+    fflush(stdin);
+
+    //Balance
+    do
+    {
+        printf("Nuevo saldo\n");
+        scanf("%s",&dat);
+        auxd=strtod(dat, &ptr);
+            if (auxd == 0 || strlen(ptr)>1){
+                printf("ERROR: Balance de cuenta debe ser un numero entero positivo mayor a 0\n");
+            }
+    } while (auxd == 0 || strlen(ptr)>1);
+
+    ax->balance = auxd;
+    strcpy(dat,"");
+    ptr = NULL;
+
+    ax->next = NULL;
+    ax->tnext = NULL;
+
+    if (t)
+        if (t->id != cID)
+		    while ((t != NULL) && (t->id != cID)) { 
+			    t = t->next;
+		    }
+
+    account *h = t->anext;
+
+    if (h->id == oldID && h->bank == oldCB && h->next == NULL){
+        t->anext = ax;
+    }
+    else if (h->id == oldID && h->bank == oldCB && h->next != NULL){
+        ax->next = h->next;
+        t->anext = ax;
+    }
+    else {
+        while ((h->next != NULL && h->next->id != oldID && h->next->bank != oldCB)){
+            h = h->next;
+        }
+        ax->next = h->next->next;
+        deleteAccount(&t, t->id, h->next->id, h->next->bank);
+        h->next = ax;
+    }
 }
+
+
 
 void linkAccountMenu(client ** p){
     int op=-1, auxi = 0, auxAC = 0, auxCB = 0;
@@ -552,6 +701,14 @@ void linkAccountMenu(client ** p){
                             printf("ERROR: Numero de cedula ingresado no existe en el sistema\n");
                         }
                 } while (auxi == 0 || strlen(ptr)>1 || !verif);
+
+                if (t->id == auxi){
+                    (*p) = (*p)->next;
+                    printf("Cliente eliminado con exito\n");
+                    system("pause");
+                    system("cls");
+                    return;
+                }
                 deleteClient(&t,auxi);
                 printf("Cliente eliminado con exito\n");
                 system("pause");
@@ -561,6 +718,13 @@ void linkAccountMenu(client ** p){
             case 4:
                 addAccount(&t);
                 printf("Cuenta añadida con exito\n");
+                system("pause");
+                system("cls");
+                break;
+
+            case 5:
+                modifyAccount(&t);
+                printf("Cuenta modificada con exito\n");
                 system("pause");
                 system("cls");
                 break;
@@ -598,10 +762,10 @@ void linkAccountMenu(client ** p){
                         if (auxAC == 0 || strlen(ptr)>1){
                             printf("ERROR: Codigo de banco de cuenta debe ser un numero entero positivo mayor a cero \n");
                         }
-                        verify = search(t,auxAC,auxCB);
+                        verify = searchbyCID(verif,auxAC,auxCB);
 
                         if (!verify){
-                            printf("ERROR: Numero cuenta ingresado no existe en el sistema\n");
+                            printf("ERROR: Numero cuenta ingresado asociado a este numero de cedula no existe en el sistema\n");
                         }
                 } while (auxAC == 0 || strlen(ptr)>1 || !verify);
 
@@ -649,7 +813,10 @@ void fileExists(FILE *input, client **p){
     boolean listTrans = FALSE; 
 
 /************************* AUX VARS *********************/
-    int auxid = 0, auxt = 0, auxsecondAID = 0, transcode = 0, auxsecondID = 0, auxb = 0;
+    int auxid = 0, auxt = 0, auxsecondAID = 0, transcode = 0, auxsecondID = 0, auxb = 0, capacity = 5,
+    useda = 0;
+    int * accNumbers = (int*)malloc(sizeof(int)*capacity);
+    int * bankIDs = (int*)malloc(sizeof(int)*capacity);
     char date [100], description[41];
     double auxbal = 0;
 
@@ -725,6 +892,7 @@ void fileExists(FILE *input, client **p){
                 listClients = FALSE;
                 listTrans = FALSE;
                 transactions = 0;
+                useda = 0;
             }
 
             if (listAccounts == TRUE && line[0]!='*' && line[1]!='B'){
@@ -754,6 +922,16 @@ void fileExists(FILE *input, client **p){
                             char *ptr;
                             auxbal=strtod(dat, &ptr);
                             //printf("Balance %lf\n", auxbal);
+                        accNumbers[useda] = auxid;
+                        bankIDs[useda] = auxb;
+                        useda++;
+                            if (useda == 5){
+                                capacity*=2;
+                                /* Expand vector capacity */
+                                accNumbers = (int*)realloc(accNumbers,sizeof(int)*capacity);
+                                bankIDs = (int*)realloc(bankIDs,sizeof(int)*capacity);
+                            }
+
                             data=-1;
                             break;
                         }
@@ -857,7 +1035,7 @@ void fileExists(FILE *input, client **p){
                         continue;
                     } 
                 } //End of for
-
+            
                 /*Insert at the end of the list*/
                     transaction * tt = new transaction;
                     transaction * tt2;
@@ -878,13 +1056,13 @@ void fileExists(FILE *input, client **p){
 
                     client * as = *p;
                     account * as2 = as->anext;
-                    
-                    as2 = search(as, auxid,auxb);
 
-                /* If no transactions, do nothing */
-                    if (as2 == NULL){
-                        continue;
-                    }
+                int ai = 0;
+                as2 = NULL;    
+                while (!as2){
+                    as2 = search(as, auxid,bankIDs[ai]);
+                    ai++;
+                }
 
                     if (as2->tnext == NULL){
                         as2->tnext = tt;
