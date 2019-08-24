@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 typedef enum {FALSE = 0, TRUE} boolean;
 
@@ -12,6 +13,7 @@ typedef struct trans {
     int type;
     char date [100];
     int secondPartysId;
+    int secondPartysCB;
     char description [41];
     trans *next;
 } transaction;
@@ -91,6 +93,7 @@ void addClient (client ** p){
     boolean alrExists;
 
     strcpy(dat,"");
+    printf("********** AGREGAR NUEVO CLIENTE **************\n");
 
     /* Ask for the data */
     do
@@ -364,6 +367,8 @@ void addAccount (client ** p){
     strcpy(dat,"");
 
     /* Ask for the data */
+    printf("********** AGREGAR NUEVA CUENTA **************\n");
+
     do
     {
         printf("Numero de cedula asociado\n");
@@ -1064,6 +1069,8 @@ void fileExists(FILE *input, client **p){
                     ai++;
                 }
 
+                tt->secondPartysCB = bankIDs[ai-1];
+
                     if (as2->tnext == NULL){
                         as2->tnext = tt;
                     }
@@ -1629,13 +1636,592 @@ void loadFromFile(client **p){
             }
 }
 
+int getTCode (client * p){
+    int cont = 0;
+    client * t = p;
+    account *a = NULL;
+    transaction *h = NULL;
+
+        while (t){
+            if (t->anext){
+                a = t->anext;
+                while (a){
+                    if (a->tnext){
+                        h = a->tnext;
+                        while (h){
+                            cont++;
+                            h = h->next;
+                        }
+                    }
+                    a = a->next;
+                }
+            }
+            t = t->next;
+        }
+    return cont+1;
+}
+
+void processPayment (client ** p, transaction * t, int Iaid, int Iacb){
+    client *h = *p;
+    transaction * tt2;
+
+    if (t==NULL){
+        exit(1);
+    }
+
+    t->next = NULL;
+
+    account * as2 = NULL;    
+    
+    while (!as2){
+        as2 = search(h, Iaid, Iacb);
+    }
+
+    if (t->type == 1)
+        as2->balance = as2->balance-t->amount;
+    else as2->balance = as2->balance+t->amount;
+
+    if (as2->tnext == NULL){
+        as2->tnext = t;
+    }
+
+    else{
+        tt2 = as2->tnext;
+            while (tt2->next != NULL){
+                tt2 = tt2->next;
+            }
+        tt2->next = t;
+    }
+    h = h->next;
+}
+
+void makePayment(client **p){
+    client * t = *p, *verif = NULL;
+    account *verify = NULL;
+    transaction *op = new transaction, *op2 = new transaction;
+    char dat[1000]; char *ptr =  NULL;
+    int auxi = 0, create = -1, auxi2 = 0;
+    boolean advance = TRUE;
+    double auxd = 0;
+
+    /* Data transaction */
+
+    int Iid = 0, Iad = 0, Icb = 0, Rid = 0, Rad = 0, Rcb = 0, Tc = 0;
+    double Ta = 0;
+    char sttime[41];
+    time_t currentTime = time(NULL);
+    struct tm *qtime = localtime(&currentTime);
+
+    strcpy(dat,"");
+
+    printf("\n************ REALIZAR PAGO ***************\n\n");
+
+
+    /* Issuer person's ID */
+    do
+    {
+        printf("Ingrese su numero de cedula\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+        verif = clientExists(t,auxi);
+            if (!verif){
+                printf("\n\nERROR: Numero de cedula ingresado no existe en el sistema\n");
+
+                /* Would you like to link a new client to the system */
+
+                printf("Desea crear un nuevo cliente?\n");
+                printf("1. Si\n");
+                printf("2. No\n");
+                printf("0. Intentar de nuevo\n\n");
+                scanf("%d", &create);
+
+                switch (create)
+                {
+                case 1:
+                    addClient(&t);
+                    printf("**************Cliente agregado con exito****************\n\n");
+                    break;
+
+                case 2:
+                    return;
+                    break;
+
+                case 0: break;
+                
+                default:
+                    printf("Opcion fuera de rango\n");
+                    break;
+                }
+            }
+    } while (!verif);
+
+    Iid = auxi;
+    ptr = NULL;
+
+    /* Issuer's account ID */
+
+    strcpy(dat,"");
+    create = -1;
+
+    do{
+        printf("Numero de cuenta\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+
+        strcpy(dat,"");
+        printf("Codigo de banco\n");
+        scanf("%s",&dat);
+        auxi2 = strtol(dat, &ptr, 10);
+        verify = searchbyCID(verif,auxi,auxi2);
+
+            if (!verify){
+                printf("\n\nERROR: Numero cuenta ingresado asociado a este numero de cedula no existe en el sistema\n");
+
+                /* Would you like to link a new account to the system */
+
+                printf("Desea crear una nueva cuenta?\n");
+                printf("1. Si\n");
+                printf("2. No\n");
+                printf("0. Intentar de nuevo\n\n");
+                scanf("%d", &create);
+
+                switch (create)
+                {
+                case 1:
+                    addAccount(&t);
+                    printf("\n**************Cuenta agregada con exito****************\n\n");
+                    break;
+
+                case 2:
+                    return;
+                    break;
+
+                case 0: break;
+                
+                default:
+                    printf("Opcion fuera de rango\n");
+                    break;
+                }
+            }
+        } while (!verify);
+
+    Icb = auxi2; Iad = auxi;
+    ptr = NULL;
+    create = -1;
+
+    /* Transaction's amount */
+
+    do {
+        advance = TRUE;
+        printf("Monto de la transaccion\n");
+        scanf("%s", &dat);
+
+        auxd = strtod(dat, &ptr);
+            if (auxd == 0 || strlen(ptr)>1){
+                printf("Monto de la transaccion debe ser un numero positivo mayor a cero\n");
+            }
+            if (verify->balance < auxd){
+                printf("Saldo insuficiente para este monto de transaccion\n");
+                advance = FALSE;
+            }
+    } while (auxd == 0 || strlen(ptr)>1 || advance == FALSE);
+
+    Ta = auxd;
+    ptr = NULL;
+
+    /* Receiver person's ID */
+    do
+    {
+        printf("Ingrese numero de cedula del receptor\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+        verif = clientExists(t,auxi);
+            if (!verif){
+                printf("\n\nERROR: Numero de cedula ingresado no existe en el sistema\n");
+
+                /* Would you like to link a new client to the system */
+
+                printf("Desea crear un nuevo cliente?\n");
+                printf("1. Si\n");
+                printf("2. No\n");
+                printf("0. Intentar de nuevo\n\n");
+                scanf("%d", &create);
+
+                switch (create)
+                {
+                case 1:
+                    addClient(&t);
+                    printf("**************Cliente agregado con exito****************\n\n");
+                    break;
+
+                case 2:
+                    return;
+                    break;
+
+                case 0: break;
+                
+                default:
+                    printf("Opcion fuera de rango\n");
+                    break;
+                }
+            }
+    } while (!verif);
+
+    Rid = auxi;
+    ptr = NULL;
+
+    /* Receiver's account ID */
+
+    strcpy(dat,"");
+    create = -1;
+
+    do{
+        printf("Numero de cuenta del receptor\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+
+        strcpy(dat,"");
+        printf("Codigo de banco\n");
+        scanf("%s",&dat);
+        auxi2 = strtol(dat, &ptr, 10);
+        verify = searchbyCID(verif,auxi,auxi2);
+
+            if (!verify){
+                printf("ERROR: Numero cuenta ingresado asociado a este numero de cedula no existe en el sistema\n");
+
+                /* Would you like to link a new account to the system */
+
+                printf("Desea crear una nueva cuenta?\n");
+                printf("1. Si\n");
+                printf("2. No\n");
+                printf("0. Intentar de nuevo\n\n");
+                scanf("%d", &create);
+
+                switch (create)
+                {
+                case 1:
+                    addAccount(&t);
+                    printf("\n**************Cuenta agregada con exito****************\n\n");
+                    break;
+
+                case 2:
+                    return;
+                    break;
+
+                case 0: break;
+                
+                default:
+                    printf("Opcion fuera de rango\n");
+                    break;
+                }
+            }
+        } while (!verify);
+
+    Rcb = auxi2; Rad = auxi;
+    ptr = NULL;
+    create = -1;
+
+    strcpy(dat,"");
+
+    /* Description */
+
+    do{
+        printf("Descripcion de la operacion\n");
+        scanf("%s",&dat);
+            if (strlen(dat)>40){
+                printf("ERROR: Descripcion de la transaccion no puede sobrepasar los 40 caracteres\n");
+            }
+    } while (strlen(dat)>40);
+
+    create = -1;
+    
+    /* Date */
+
+    strcpy(sttime,ctime(&currentTime));
+    Tc = getTCode(t);
+
+    /* Show data and confirm */
+    printf("********** DATOS DE LA TRANSACCION **************\n");
+    printf("Por favor compruebe sus datos antes de continuar\n");
+
+    printf("Cedula del emisor %d\n", Iid);
+    printf("Numero de cuenta del emisor %d\n", Iad);
+    printf("Cedula del receptor %d\n", Rid);
+    printf("Numero de cuenta del receptor %d\n", Rad);
+    printf("Monto %lf\n", Ta);
+    printf("Descripcion %s\n", dat);
+    printf("Fecha %s\n", sttime);
+    printf("Codigo de la transaccion %d\n\n",Tc);
+
+    printf("Son los datos correctos?\n");
+    printf("1. Si\n");
+    printf("2. No\n");
+    printf("0. Cancelar transaccion\n");
+    scanf("%d",&create);
+
+
+    switch (create)
+    {
+    case 1:
+        op->secondPartysAN = Rad;
+        op->secondPartysId = Rid;
+        op->secondPartysCB = Rcb;
+        op->type = 1; //Payment
+        strcpy(op->description,dat);
+        strcpy(op->date,sttime);
+        op->code = Tc;
+        op->amount = Ta;
+
+        processPayment(&t,op,Iad,Icb);
+        
+        /* Receiver */
+
+        op2->secondPartysAN = Iad;
+        op2->secondPartysId = Iid;
+        op2->secondPartysCB = Icb;
+        op2->type = 2; //Get paid
+        strcpy(op2->description,dat);
+        strcpy(op2->date,sttime);
+        op2->code = Tc+1;
+        op2->amount = Ta;
+
+        processPayment(&t,op2,Rad,Rcb);
+        break;
+
+    case 2: break;
+
+    case 3: break;
+    
+    default:
+        break;
+    }
+} 
+
+transaction * isCodeValid (account *p, int n){
+    transaction *t = NULL;
+        if (p->tnext){
+            t = p->tnext;
+        }
+
+    if (!t){
+        return NULL;
+    }
+
+    else while (t){
+        if (t->code == n) return t;
+        t=t->next;
+    }
+    return NULL;
+}
+
+void showAllMovements (account *p){
+    transaction *t = NULL;
+    if (p->tnext){
+        t = p->tnext;
+    }
+
+    printf("\n************ MOVIMIENTOS ***************\n\n");
+    if (!t){
+        printf("No hay movimientos en esta cuenta\n");
+        return;
+    }
+
+    else while (t){
+        printf("--------------------------------------------------------------------\n");
+        printf("Codigo de transaccion: %d\n",t->code);
+        printf("Monto: %lf\n",t->amount);
+        if (t->type == 1)
+            printf("Tipo de transaccion: Pago\n");
+        else
+            printf("Tipo de transaccion: Cobro\n");
+        printf("Fecha: %s\n",t->date);
+        printf("Numero de cedula del receptor: %d\n",t->secondPartysId);
+        printf("Numero de cuenta del receptor: %d\n",t->secondPartysAN);
+        printf("Descripcion: %s\n",t->description);
+        printf("--------------------------------------------------------------------\n");
+        t=t->next;
+    }
+}
+
+void deleteTransaction (transaction ** p, int n){
+    transaction **ppn = p;           /* pointer to pointer to node*/
+    transaction *pn = *p;            /* pointer to node */
+
+    for (; pn; ppn = &pn->next, pn = pn->next) {
+        if (pn->code == n) {
+            *ppn = pn->next;    /* set address to next */
+            delete(pn);
+            break;
+        }
+    }
+
+}
+
+void updateBalance (client ** p, int id, int aid, int codbank, int type, double s){
+    client *t = *p;
+    account *h = NULL;
+
+    while (t){
+        if (t->id == id)
+            break;
+    t=t->next;
+    }
+
+    if (t->anext) h=t->anext;
+
+    while (h){
+        if (h->id == aid && h->bank == codbank){
+            if (type == 1) h->balance+=s;
+            else h->balance-=s;
+        }
+        h=h->next;
+    }
+}
+
+void deleteTransaction(client **p){
+    char dat[1000]; char *ptr = NULL;
+    client *verif = NULL, *t = *p;
+    account *verify = NULL;
+    transaction *target = NULL;
+    int auxi = 0, auxi2 = 0, Rid = 0, Raid = 0, Rcb = 0, Iid = 0, Iaid = 0, Icb = 0, auxcod = 0;
+
+    strcpy(dat,"");
+    printf("\n************ ELIMINAR TRANSACCION ***************\n\n");
+
+    do
+    {
+        printf("Numero de cedula asociado\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+            verif = clientExists(t,auxi);
+            if (!verif){
+                printf("ERROR: Numero de cedula ingresado no existe en el sistema\n");
+            }
+    } while (auxi == 0 || strlen(ptr)>1 || !verif);
+    
+    strcpy(dat,"");
+    fflush(stdin);
+
+    /* Account data */
+
+    do
+    {
+        printf("Numero de cuenta\n");
+        scanf("%s",&dat);
+        auxi = strtol(dat, &ptr, 10);
+            if (auxi == 0 || strlen(ptr)>1){
+                printf("ERROR: Numero de cuenta de el cliente debe ser un numero entero positivo mayor a cero \n");
+                }
+
+    strcpy(dat,"");
+    //Bank code
+
+        printf("Codigo de banco\n");
+        scanf("%s",&dat);
+        auxi2 = strtol(dat, &ptr, 10);
+            if (auxi2 == 0 || strlen(ptr)>1){
+                printf("ERROR: Codigo de banco debe ser un numero entero positivo mayor a cero \n");
+            }
+            verify = searchbyCID(verif,auxi,auxi2);
+
+            if (!verify){
+                printf("ERROR: Numero de cuenta asociado a esta cedula no existe en el sistema\n");
+            }
+    } while (auxi == 0 || strlen(ptr)>1 || !verify);
+    strcpy(dat,"");
+    ptr = NULL;
+
+    /* Transaction code */
+
+    do
+    {
+        printf("A continuacion se mostraran todas las transacciones realizadas por esta cuenta, escriba el codigo de la transaccion que desea eliminar\n");
+        showAllMovements(verify);
+        scanf("%d",&auxi);
+        target = isCodeValid(verify,auxi);
+            if (!target){
+                printf("ERROR: Codigo de transaccion no es valido\n");
+            }
+    } while (!target);
+    
+    /* Update accounts */
+
+    Iid = verif->id;
+    Iaid = verify->id;
+    Icb = verify->bank;
+    Rid = target->secondPartysId;
+    Raid = target->secondPartysAN;
+    Rcb = target->secondPartysCB;
+    auxcod = target->code;
+    
+    if (target->type == 1){
+        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
+        deleteTransaction(&verify->tnext,target->code);
+        verif = clientExists(t,Rid);
+        verify = searchbyCID(verif,Raid,Rcb);
+        transaction * target2 = NULL;
+        target2 = isCodeValid(verify,auxcod+1);
+        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
+        if (target2)
+            deleteTransaction(&verify->tnext,target2->code);
+        return;
+    }
+
+    else {
+        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
+        deleteTransaction(&verify->tnext,target->code);
+        verif = clientExists(t,Rid);
+        verify = searchbyCID(verif,Raid,Rcb);
+        transaction * target2 = NULL;
+        target2 = isCodeValid(verify,target->code-1); 
+        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
+        if (target2)
+            deleteTransaction(&verify->tnext,target2->code);
+        return;
+    }
+}
+
+void transactionOptions(client **p){
+    client *t = *p;
+    int op=-1;
+        if (op){
+            printf("    *** Transacciones ****\n");
+            printf("    \t 1. Realizar pago\n");
+            printf("    \t 2. Eliminar transaccion\n");
+            printf("    \t 0. Regresar\n");
+            scanf("%d",&op);
+
+            switch (op)
+            {
+            case 1:
+                makePayment(&t);
+                break;
+
+            case 2:
+                deleteTransaction(&t);
+                printf("Transaccion eliminada con exito\n");
+                break;
+
+            case 0: return;
+                break;
+            default:
+                printf("Opcion fuera de rango\n");
+                break;
+            }
+        }
+
+}
+
 void showMenu(){
     client *c = NULL;
     int op=-1;
         while (op){
             printf("\n*** Sistema de pagos y cobros P2Bank ***\n\n");
             printf("    \t 1. Cuentas y clientes\n");
-            printf("    \t 2. Opciones de pagos\n");
+            printf("    \t 2. Transacciones\n");
             printf("    \t 3. Consultas varias\n");
             printf("    \t 4. Cargar datos desde archivo\n");
             printf("    \t 5. Mostrar todos los datos\n");
@@ -1647,9 +2233,14 @@ void showMenu(){
             {
             case 1:
                 linkAccountMenu(&c);
+                system("pause");
+                system("cls");
                 break;
 
             case 2:
+                transactionOptions(&c);
+                system("pause");
+                system("cls");
                 break;
             
             case 3:
