@@ -38,43 +38,6 @@ struct client{
     account *anext;
 };
 
-void checkTransactionsMenu(){
-    int op=-1;
-        if (op){
-            printf("    *** Consultas varias ****\n");
-            printf("    \t 1. Mostrar informacion por nombre\n");
-            printf("    \t 2. Mostrar transacciones de cobro\n");
-            printf("    \t 3. Mostrar transacciones de pago\n");
-            printf("    \t 4. Mostrar todas las transacciones\n");
-            printf("    \t 5. Mostrar transacciones por rango de valores\n");
-            printf("    \t 0. Regresar\n");
-            scanf("%d", &op);
-
-            switch (op)
-            {
-            case 1:
-                /* code */
-                break;
-
-            case 2: break;
-            case 3: break;
-            case 4: break;
-            case 5: break;
-
-            case 0:
-                system("cls");
-                break;
-            
-            default:
-                printf("Opcion fuera de rango\n");
-                system("pause");
-                system("cls");
-                break;
-            }
-            
-        }
-}
-
 client * clientExists (client *p, int id){
     client *t = p;
         while (t)
@@ -2215,6 +2178,109 @@ void transactionOptions(client **p){
 
 }
 
+boolean nameFits (char * name, char * name2){
+    for (int i = 0; i<=strlen(name); i++){
+        if (name[i]!=name2[i]) return FALSE;
+    }
+    return TRUE;
+}
+
+void dataName(client *p, char * name){
+    int totalAccounts = 0;
+    double totalBalance = 0;
+    boolean canShow = FALSE;
+
+    if (p){
+        printf("********** DATOS DE CLIENTE **************\n");
+        while (p){
+            totalAccounts=0;
+            totalBalance=0;
+            canShow = nameFits(name,p->name);
+                if (canShow==TRUE){
+                    printf("Cedula: %d\n",p->id);
+                    printf("Nombre: %s\n",p->name);
+                    printf("Direccion: %s\n",p->city);
+                    printf("Telefono: %s\n",p->phone);
+                
+                if (p->anext){
+                    printf("\n\n********** CUENTAS BANCARIAS **************\n\n");
+
+                        while(p->anext){
+                            totalAccounts++;
+                            totalBalance+=p->anext->balance;
+                            printf("-------------------------------------------\n");
+                            printf("Numero de cuenta: %d\n",p->anext->id);
+                            printf("Codigo de banco: %d\n",p->anext->bank);
+                            
+                                if (p->anext->type == 1){
+                                    printf("Tipo de cuenta: Corriente\n");
+                                }
+                                else printf("Tipo de cuenta: Ahorro\n");
+                            printf("Saldo: %lf\n",p->anext->balance);
+                            printf("-------------------------------------------\n");
+                            p->anext=p->anext->next;
+                        }
+
+                    printf("\nTotal de cuentas bancarias asociadas: %d\n",totalAccounts);
+                    printf("Saldo total: %lf\n", totalBalance);
+                }
+
+                else if (!p->anext){
+                    printf("No hay cuentas bancarias asociadas a %s\n", p->name);
+                }
+            }        
+            p=p->next;
+        }
+    }
+
+    else if (!p){
+        printf("No existe ningun cliente con el nombre %s\n",name);
+    }
+}
+
+void checkTransactionsMenu(client *p){
+    int op=-1;
+    char dat [1000];
+    strcpy(dat,"");
+
+        if (op){
+            printf("    *** Consultas varias ****\n");
+            printf("    \t 1. Mostrar informacion por nombre\n");
+            printf("    \t 2. Mostrar transacciones de cobro\n");
+            printf("    \t 3. Mostrar transacciones de pago\n");
+            printf("    \t 4. Mostrar todas las transacciones\n");
+            printf("    \t 5. Mostrar transacciones por rango de valores\n");
+            printf("    \t 0. Regresar\n");
+            scanf("%d", &op);
+            fflush(stdin);
+
+            switch (op)
+            {
+            case 1:
+                printf("Ingrese nombre de cliente\n");
+                gets(dat);
+                dataName(p,dat);
+                break;
+
+            case 2: break;
+            case 3: break;
+            case 4: break;
+            case 5: break;
+
+            case 0:
+                system("cls");
+                break;
+            
+            default:
+                printf("Opcion fuera de rango\n");
+                system("pause");
+                system("cls");
+                break;
+            }
+            
+        }
+}
+
 void showMenu(){
     client *c = NULL;
     int op=-1;
@@ -2244,7 +2310,9 @@ void showMenu(){
                 break;
             
             case 3:
-                checkTransactionsMenu();
+                checkTransactionsMenu(c);
+                system("pause");
+                system("cls");
                 break;
 
             case 4:
