@@ -91,9 +91,9 @@ It's required an interactive menu with the following options
   1. Given a client's name show all the data that belongs to the people with that name (ID, address, phone,account IDs, bank names and balance of that account). Show the number of accounts affiliated for each person and the total balance (the sum of all balances from all their accounts).
   2. Given a client's ID show:
      1. Full name, client's code and linked account IDs, as well as each account's balance and total of payment for each account (count the ones where they're sending and receiving).
-     2. Given a person's data (ID and name) show all the payment transactions done as receiver, must also show giver's data (ID, name), as well as amount, date/time. Give the option to sort them by date or by amount, show also the total amount from all the payment transactions.
-     3. Given a person's data (ID and name) show all the payment transactions done as giver, must also show receiver's data (ID, name), as well as amount, date/time. Give the option to sort them by date or by amount, show also the total amount from all the payment transactions.
-     4. Given a person's data (ID and name) show all the transactions sorted by account's ID, first show the payment transactions, then the charging transactions, both of them sorted by date. Show also the total amount from each account.
+     2. Given a person's data (ID) show all the payment transactions done as receiver, must also show giver's data (ID, name), as well as amount, date/time. Give the option to sort them by date or by amount, show also the total amount from all the payment transactions.
+     3. Given a person's data (ID) show all the payment transactions done as giver, must also show receiver's data (ID, name), as well as amount, date/time. Give the option to sort them by date or by amount, show also the total amount from all the payment transactions.
+     4. Given a person's data (ID) show all the transactions sorted by account's ID, first show the payment transactions, then the charging transactions, both of them sorted by date. Show also the total amount from each account.
      5. Given a closed range of values for an amount, print all the transactions linked to that range by an increasing order, data that should be showed is: Amount, date/time, name of both parties, account's ID from both parties, ID of both parties.
 
 * __4. Load data from a file__: All the structures can be filled from a text file

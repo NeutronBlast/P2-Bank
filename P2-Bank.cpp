@@ -2238,9 +2238,303 @@ void dataName(client *p, char * name){
     }
 }
 
+transaction * findCodePos (client *p, int n){
+    account * a = NULL;
+    transaction *t = NULL;
+        if (p->anext){
+            a = p->anext;
+                while (a){
+                    if (a->tnext){
+                        t = a->tnext;
+                        while (t){
+                            if (t->code == n) 
+                                return t;
+                            t=t->next;
+                        }
+                    }
+                    a=a->next;
+                }
+            }
+    return NULL;
+}
+
+void swap(double *A, double *B)
+{
+	double aux = 0;
+	aux = *A;
+	*A = *B;
+	*B = aux;
+}
+
+void swap2(int *A, int *B)
+{
+	int aux = 0;
+	aux = *A;
+	*A = *B;
+	*B = aux;
+}
+
+void swap3(long long int *A, long long int *B)
+{
+	long long int aux = 0;
+	aux = *A;
+	*A = *B;
+	*B = aux;
+}
+
+void orderByAmount (double * amount, int * codes, int capacity){
+    int min = 0;
+	for (int i = 0; i <= capacity; i++)                     //Loop for ascending ordering
+	{
+        min = i;
+		for (int j = 0; j <= capacity; j++)             //Loop for comparing other values
+		{
+            if (amount[min]>amount[j])
+                min = j;
+            if (min != i){
+                swap(&amount[min],&amount[i]);
+                swap2(&codes[min],&codes[i]);
+            }
+		}
+	}
+}
+
+void orderByDate (long long int * dates, int * codes, int capacity){
+    int min = 0;
+	for (int i = 0; i <= capacity; i++)                     //Loop for ascending ordering
+	{
+        min = i;
+		for (int j = 0; j <= capacity; j++)             //Loop for comparing other values
+		{
+            if (dates[min]>dates[j])
+                min = j;
+            if (min != i){
+                swap3(&dates[min],&dates[i]);
+                swap2(&codes[min],&codes[i]);
+            }
+		}
+	}
+}
+
+void Rtransactions (int *codes, int capacity, client *p, client * fullList){
+    int i = 0;
+    transaction * aux = NULL;
+    client * aux2 = NULL;
+    double total = 0;
+
+    if (codes){
+        printf("********** DATOS DE TRANSACCIONES **************\n");
+        for (i=0; i<=capacity; i++){
+            aux = findCodePos(p,codes[i]);
+                if (aux){
+                    printf("-------------------------------------------\n");
+                    printf("Monto: %lf\n",aux->amount);
+                    printf("Codigo de transaccion: %d\n",aux->code);
+                    printf("Fecha: %s\n",aux->date);
+                    printf("Descripcion: %s\n",aux->description);
+                    printf("Cedula del receptor: %d\n",aux->secondPartysId);
+                    aux2 = clientExists(fullList,aux->secondPartysId);
+                    printf("Nombre del receptor: %s\n",aux2->name);
+                    printf("Numero de cuenta del receptor: %d\n",aux->secondPartysAN);
+                    printf("-------------------------------------------\n");
+                    total+=aux->amount;
+                }
+            }
+            printf("Total: %lf\n",total);
+        }
+}
+
+int identificarmes(char linea[]) {
+	/*Month to number*/
+	if ((linea[0] == 'J') && (linea[1] == 'a')) /*Enero*/
+		return 1;
+	else if (linea[0] == 'F') /*Febrero*/
+		return 2;
+	else if ((linea[0] == 'M') && (linea[1] == 'a') && (linea[2] == 'r')) /*Marzo*/
+		return 3;
+	else if ((linea[0] == 'A') && (linea[1] == 'p')) /*Abril*/
+		return 4;
+	else if ((linea[0] == 'M') && (linea[1] == 'a') && (linea[2] == 'y')) /*Mayo*/
+		return 5;
+	else if ((linea[0] == 'J') && (linea[1] == 'u') && (linea[2] == 'n')) /*Junio*/
+		return 6;
+	else if ((linea[0] == 'J') && (linea[1] == 'u') && (linea[2] == 'l')) /*Julio*/
+		return 7;
+	else if ((linea[0] == 'A') && (linea[1] == 'u')) /*Agosto*/
+		return 8;
+	else if (linea[0] == 'S') /*Septiembre*/
+		return 9;
+	else if (linea[0] == 'O') /*Octubre*/
+		return 10;
+	else if (linea[0] == 'N') /*Noviembre*/
+		return 11;
+	else if (linea[0] == 'D') /*Diciembre*/
+		return 12;
+
+	else return 0;
+}
+
+long long int conversion(char * date) {
+	int i = 0;
+	long long int tot = 0;
+	int a, mes, dia, hora;
+	long int min, seg;
+	char y[6], mo[5], d[3], h[3], m[3], s[3];
+    strcpy(y,"");
+    strcpy(mo,"");
+    strcpy(d,"");
+    strcpy(h,"");
+    strcpy(m,"");
+    strcpy(s,"");
+
+	strncpy(y, &(date[20]), 5);
+	a = atoi(y);
+
+	/*Years to hours*/
+	tot = a * 8760;
+	strncpy(mo, &(date[4]), 3);
+    mo[3]='\0';
+
+
+    /*Months to hours*/
+	mes = identificarmes(mo);
+    mes = mes*730;
+	tot = tot + mes;
+
+	if (date[9] == ' '){
+		strncpy(d, &(date[9]), 1);
+        d[1]='\0';
+    }
+	else{
+		strncpy(d, &(date[8]), 2);
+        d[2]='\0';
+    }
+	dia = atoi(d);
+
+	/*Days to hours*/
+    dia= dia *24;
+	tot = tot;
+	strncpy(h, &(date[11]), 2);
+    h[2]='\0';
+	hora = atoi(h);
+	tot = tot + hora;
+	strncpy(m, &(date[14]), 2);
+    m[2]='\0';
+	min = atol(m);
+	min = min / 60;
+	tot = tot + min;
+	strncpy(s, &(date[17]), 2);
+    s[2]='\0';
+	seg = atol(s);
+	seg = seg / 3600;
+	tot = tot + seg;
+	return tot;
+}
+
+void getTR (client *t, client * fullList, int capacity, double * amount, long long int *dates, int * codes, int mode, int whatToOrder){
+    client * aux = NULL;
+    account * a = NULL;
+    transaction * q = NULL;
+    codes = (int*)malloc(sizeof(int)*capacity);
+    amount = (double*)malloc(sizeof(double)*capacity);
+    dates = (long long int*)malloc(sizeof(long long int)*capacity);
+    int i = 0;
+
+    if (mode == 1){
+        /*Mode 1: Order by amount*/
+        if (t->anext){
+            a = t->anext;
+            while (a){
+                if (a->tnext){
+                    q = a->tnext;
+                    while (q){
+                        if (q->type == 2 && whatToOrder == 1){
+                            codes[i]=q->code;
+                            amount[i]=q->amount;
+                            i++;
+                            if (i == capacity){
+                                capacity*=2;
+                                /* Expand vector capacity */
+                                codes = (int*)realloc(codes,sizeof(int)*capacity);
+                                amount = (double*)realloc(amount,sizeof(double)*capacity);
+                            }
+
+                        } /* 1: Order transactions as receiver */
+
+                        if (q->type == 1 && whatToOrder == 2){
+                            codes[i]=q->code;
+                            amount[i]=q->amount;
+                            i++;
+                            if (i == capacity){
+                                capacity*=2;
+                                /* Expand vector capacity */
+                                codes = (int*)realloc(codes,sizeof(int)*capacity);
+                                amount = (double*)realloc(amount,sizeof(double)*capacity);
+                            }
+                        } /* 2: Order transactions as giver */
+                        q=q->next;
+                    }
+                }
+                a=a->next;
+            }
+        }
+        orderByAmount(amount, codes, i-1);
+        Rtransactions(codes,i-1,t, fullList);
+    } /*Order by amount*/
+
+    else if (mode == 2){
+        /*Mode 2: Order by date*/
+        if (t->anext){
+            a = t->anext;
+                while(a){
+                    if (a->tnext){
+                        q = a->tnext;
+                            while(q){
+                                if (q->type == 2 && whatToOrder == 1){
+                                    codes[i]=q->code;
+                                    /* Convert string date to integer time_t */
+                                    dates[i]=conversion(q->date);
+                                    i++;
+                                        if (i == capacity){
+                                            capacity*=2;
+                                            /* Expand vector capacity */
+                                            codes = (int*)realloc(codes,sizeof(int)*capacity);
+                                            dates = (long long int*)realloc(dates,sizeof(long long int)*capacity);
+                                        }
+                                    }
+
+                                if (q->type == 1 && whatToOrder == 2){
+                                    codes[i]=q->code;
+                                    /* Convert string date to integer time_t */
+                                    dates[i]=conversion(q->date);
+                                    i++;
+                                        if (i == capacity){
+                                            capacity*=2;
+                                            /* Expand vector capacity */
+                                            codes = (int*)realloc(codes,sizeof(int)*capacity);
+                                            dates = (long long int*)realloc(dates,sizeof(long long int)*capacity);
+                                        }
+                                }
+                                q=q->next;
+                            }
+                    }
+                    a=a->next;
+                }
+        }
+    orderByDate(dates, codes, i-1);
+    Rtransactions(codes,i-1,t, fullList);
+    } /*Order by date*/
+}
+
+
+
 void checkTransactionsMenu(client *p){
-    int op=-1;
-    char dat [1000];
+    int op=-1, auxi = 0, capacity = 1000, op2=-1;
+    int * codes = NULL;
+    long long int * dates = NULL;
+    double * amounts = NULL;
+    char dat [1000]; char *ptr = NULL;
+    client * verif = NULL;
     strcpy(dat,"");
 
         if (op){
@@ -2262,8 +2556,89 @@ void checkTransactionsMenu(client *p){
                 dataName(p,dat);
                 break;
 
-            case 2: break;
-            case 3: break;
+            case 2: 
+                do
+                {
+                    printf("Numero de cedula de cliente\n");
+                    scanf("%s",&dat);
+                    auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                            }
+                        verif = clientExists(p,auxi);
+                        if (!verif){
+                            printf("ERROR: Numero de cedula ingresado no existe en el sistema\n");
+                        }
+                } while (auxi == 0 || strlen(ptr)>1 || !verif);
+
+                ptr = NULL;
+                do
+                {
+                    printf("\nComo le gustaria que se ordenaran los datos?\n");
+                    printf("1. Por monto\n");
+                    printf("2. Por fecha\n");
+                    printf("0. Regresar\n");
+                    scanf("%s",&dat);
+                    op2 = strtol(dat,&ptr,10);
+
+                        if(op2 != 1 && op2 != 2 && op2 != 0){
+                            printf("Opcion fuera de rango\n");
+                        }
+                } while (op2 != 1 && op2 != 2 && op2 != 0);
+                
+                switch (op2)
+                {
+                case 1:
+                    getTR(verif,p,capacity,amounts,dates,codes,1,1);
+                    break;
+
+                case 2: 
+                    getTR(verif,p,capacity,amounts,dates,codes,2,1);
+                    break;
+                }
+                break;
+            case 3:                 
+                do
+                {
+                    printf("Numero de cedula de cliente\n");
+                    scanf("%s",&dat);
+                    auxi = strtol(dat, &ptr, 10);
+                        if (auxi == 0 || strlen(ptr)>1){
+                            printf("ERROR: Numero de cedula de el cliente debe ser un numero entero positivo mayor a cero \n");
+                            }
+                        verif = clientExists(p,auxi);
+                        if (!verif){
+                            printf("ERROR: Numero de cedula ingresado no existe en el sistema\n");
+                        }
+                } while (auxi == 0 || strlen(ptr)>1 || !verif);
+
+                ptr = NULL;
+                do
+                {
+                    printf("\nComo le gustaria que se ordenaran los datos?\n");
+                    printf("1. Por monto\n");
+                    printf("2. Por fecha\n");
+                    printf("0. Regresar\n");
+                    scanf("%s",&dat);
+                    op2 = strtol(dat,&ptr,10);
+
+                        if(op2 != 1 && op2 != 2 && op2 != 0){
+                            printf("Opcion fuera de rango\n");
+                        }
+                } while (op2 != 1 && op2 != 2 && op2 != 0);
+                
+                switch (op2)
+                {
+                case 1:
+                    getTR(verif,p,capacity,amounts,dates,codes,1,2);
+                    break;
+
+                case 2: 
+                    getTR(verif,p,capacity,amounts,dates,codes,2,2);
+                    break;
+                }
+                break;
+            break;
             case 4: break;
             case 5: break;
 
