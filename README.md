@@ -109,7 +109,7 @@ It's required an interactive menu with the following options
 Click the P2-Bank.exe file in this project's folder
 
 ## Status
-Project is: _In progress_
+Project is: _"Finished"_ , has some small bugs
 
 ## Inspiration
 This program is an old uni project

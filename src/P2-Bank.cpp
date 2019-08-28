@@ -1077,7 +1077,7 @@ boolean errorInFileStructure (FILE *input){
     while (!feof(input) && !ferror(input)){
         fgets(line, 1000, input);
 
-    if (line[0]=='\n') continue;
+    if (line[0]=='\n' || strlen(line)<5) continue;
 
 /************************************* CLIENTS **************************************************/
     if (line[0]=='*' && line[1]=='C'){
@@ -1175,8 +1175,6 @@ boolean errorInFileStructure (FILE *input){
                                 /* Expand vector capacity */
                                 people = (int*)realloc(people,sizeof(int)*capacity);
                             }
-                        //printf("Client[%d] = %d\n", usedp-1,auxi);
-                        //listClients = FALSE;
                     break;    
                 }
             strcpy(dat,"");
@@ -1283,11 +1281,11 @@ boolean errorInFileStructure (FILE *input){
                             }
                         if (isThereError == FALSE){
                         /* For the array*/
-                        /*if (useda>0)
+                        if (useda>0)
                             if (bankAccountExists(accNumbers,bankIDs,capacity,auxAC,auxCB) == TRUE){
                                 printf("ERROR: Numero de cuenta %d en banco %d ya existe en el sistema, linea: %s\n",auxAC, auxCB, line);
                                 return TRUE;
-                            }*/
+                            }
 
                         accNumbers[useda] = auxAC;
                         bankIDs[useda] = auxCB;
@@ -1299,7 +1297,6 @@ boolean errorInFileStructure (FILE *input){
                                 bankIDs = (int*)realloc(bankIDs,sizeof(int)*capacity);
 
                             }
-                        //printf("%d - Bank: %d , ID: %d \n", useda-1,auxCB,auxAC);
                         }
                         data=-1;
                         accounts++;
@@ -1579,7 +1576,6 @@ boolean errorInFileStructure (FILE *input){
 
     }
     fclose(input);
-    //printf("Clients total %d\n",usedp);
     return isThereError;
 }
 
@@ -2139,7 +2135,8 @@ void deleteTransaction(client **p){
     Icb = target->secondPartysCB;
     auxcod = target->code;
     
-    if (target->type == 1){
+    /* Update balance in both sides and delete transaction */
+
         updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
         double a = target->amount;
         deleteTransaction(&verify->tnext,target->code);
@@ -2147,24 +2144,11 @@ void deleteTransaction(client **p){
         verify = searchbyCID(verif,Raid,Rcb);
         transaction * target2 = NULL;
         target2 = isCodeValid(verify,auxcod+1);
-        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,a);
-        if (target2)
+        if (target2){
+            updateBalance(&t,verif->id,verify->id,verify->bank,target->type,a);
             deleteTransaction(&verify->tnext,target2->code);
+        }
         return;
-    }
-
-    else {
-        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
-        deleteTransaction(&verify->tnext,target->code);
-        verif = clientExists(t,Rid);
-        verify = searchbyCID(verif,Raid,Rcb);
-        transaction * target2 = NULL;
-        target2 = isCodeValid(verify,target->code-1); 
-        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
-        if (target2)
-            deleteTransaction(&verify->tnext,target2->code);
-        return;
-    }
 }
 
 void transactionOptions(client **p){
@@ -2864,9 +2848,9 @@ void outputFile (client *p, char * path){
     transaction * t = NULL;
         while (p){
             fprintf(output,"%s\n","*C");
-            fprintf(output,"%d%s%s%s%s%s%s\n",p->id,"-",p->name,"-",p->city,"-",p->phone);
+            fprintf(output,"%d%s%s%s%s%s%s",p->id,"-",p->name,"-",p->city,"-",p->phone);
             if (p->anext){
-                fprintf(output,"%s\n","*B");
+                fprintf(output,"\n%s\n","*B");
                 a = p->anext;
                 h = p->anext;
                     while (a){
