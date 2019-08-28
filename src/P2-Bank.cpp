@@ -9,6 +9,8 @@ typedef enum {FALSE = 0, TRUE} boolean;
 typedef struct trans {
     int code;
     int secondPartysAN;
+    int issuersID;
+    int issuersAID;
     double amount;
     int type;
     char date [100];
@@ -81,7 +83,7 @@ void addClient (client ** p){
     do
     {
         printf("Nombre de cliente (No mayor a 149 caracteres)\n");
-        scanf("%s",&dat);
+        gets(dat);
             if (strlen(dat)>150){
                 printf("ERROR: Nombre de cliente no puede ser mayor de 149 caracteres\n");
             }
@@ -94,19 +96,20 @@ void addClient (client ** p){
     do
     {
         printf("Ciudad (No mayor a 199 caracteres)\n");
-        scanf("%s",&dat);
+        gets(dat);
             if (strlen(dat)>199){
                 printf("ERROR: Ciudad no puede ser mayor a 199 caracteres\n");
             }
     } while (strlen(dat)>199);
 
+    fflush(stdin);
     strcpy(ax->city,dat);
     strcpy(dat,"");
 
     do
     {
         printf("Telefono (No mayor a 29 caracteres)\n");
-        scanf("%s",&dat);
+        gets(dat);
             if (strlen(dat)>29){
                 printf("ERROR: Numero de telefono no puede ser mayor a 29 caracteres\n");
             }
@@ -191,10 +194,12 @@ void modifyClient (client ** p){
     } while (auxi == 0 || strlen(ptr)>1 || verif);
 
     ax->id = auxi;
+    fflush(stdin);
+
     do
     {
         printf("Nuevo nombre de cliente (No mayor a 149 caracteres)\n");
-        scanf("%s",&dat);
+        gets(dat);
             if (strlen(dat)>150){
                 printf("ERROR: Nombre de cliente no puede ser mayor de 149 caracteres\n");
             }
@@ -207,7 +212,7 @@ void modifyClient (client ** p){
     do
     {
         printf("Nueva ciudad (No mayor a 199 caracteres)\n");
-        scanf("%s",&dat);
+        gets(dat);
             if (strlen(dat)>199){
                 printf("ERROR: Ciudad no puede ser mayor a 199 caracteres\n");
             }
@@ -215,16 +220,18 @@ void modifyClient (client ** p){
 
     strcpy(ax->city,dat);
     strcpy(dat,"");
+    fflush(stdin);
 
     do
     {
         printf("Nuevo telefono (No mayor a 29 caracteres)\n");
-        scanf("%s",&dat);
+        gets(dat);
             if (strlen(dat)>29){
                 printf("ERROR: Numero de telefono no puede ser mayor a 29 caracteres\n");
             }
     } while (strlen(dat)>29);
 
+    fflush(stdin);
     strcpy(ax->phone,dat);
 
     ax->next = NULL;
@@ -642,15 +649,11 @@ void linkAccountMenu(client ** p){
             case 1:
                 addClient(&t);
                 printf("Cliente agregado con exito\n");
-                system("pause");
-                system("cls");
                 break;
 
             case 2:
                 modifyClient(&t);
                 printf("Cliente modificado con exito\n");
-                system("pause");
-                system("cls");
                 break;
             
             case 3:
@@ -673,28 +676,20 @@ void linkAccountMenu(client ** p){
                 if (t->id == auxi){
                     (*p) = (*p)->next;
                     printf("Cliente eliminado con exito\n");
-                    system("pause");
-                    system("cls");
                     return;
                 }
                 deleteClient(&t,auxi);
                 printf("Cliente eliminado con exito\n");
-                system("pause");
-                system("cls");
                 break;
 
             case 4:
                 addAccount(&t);
                 printf("Cuenta añadida con exito\n");
-                system("pause");
-                system("cls");
                 break;
 
             case 5:
                 modifyAccount(&t);
                 printf("Cuenta modificada con exito\n");
-                system("pause");
-                system("cls");
                 break;
 
             case 6:
@@ -739,8 +734,6 @@ void linkAccountMenu(client ** p){
 
                 deleteAccount(&t,auxi,auxAC,auxCB);
                 printf("Cuenta eliminada con exito\n");
-                system("pause");
-                system("cls");
                 break;
             
             case 0:
@@ -750,7 +743,6 @@ void linkAccountMenu(client ** p){
             default:
                 printf("Opcion fuera de rango\n");
                 system("pause");
-                system("cls");
                 break;
             }
         }
@@ -782,7 +774,7 @@ void fileExists(FILE *input, client **p){
 
 /************************* AUX VARS *********************/
     int auxid = 0, auxt = 0, auxsecondAID = 0, transcode = 0, auxsecondID = 0, auxb = 0, capacity = 5,
-    useda = 0;
+    useda = 0, issuersID = 0, issuersCB = 0;
     int * accNumbers = (int*)malloc(sizeof(int)*capacity);
     int * bankIDs = (int*)malloc(sizeof(int)*capacity);
     char date [100], description[41];
@@ -815,6 +807,7 @@ void fileExists(FILE *input, client **p){
                         {
                         case 0:
                             ax->id = strtol(dat, NULL, 10);
+                            issuersID = ax->id;
                             //printf("Cedula %d\n", ax->id);
                             break;
                         case 1: 
@@ -994,6 +987,9 @@ void fileExists(FILE *input, client **p){
                         case 7:
                             auxsecondID = strtol (dat, NULL, 10);
                             //printf("Cedula de la otra persona involucrada %d\n", auxsecondID);
+                             break;
+                        case 8:
+                            issuersCB = strtol (dat, NULL,10);
                             data=-1;
                             break;
                         }
@@ -1011,8 +1007,10 @@ void fileExists(FILE *input, client **p){
                     if (tt==NULL){
                             exit(1);
                     }
-
+                    tt->secondPartysCB = issuersCB;
                     tt->type = auxt;
+                    tt->issuersID = issuersID;
+                    tt->issuersAID = auxid;
                     tt->secondPartysAN = auxsecondID;
                     strcpy(tt->date,date);
                     tt->amount = auxbal;
@@ -1285,11 +1283,11 @@ boolean errorInFileStructure (FILE *input){
                             }
                         if (isThereError == FALSE){
                         /* For the array*/
-                        if (useda>0)
+                        /*if (useda>0)
                             if (bankAccountExists(accNumbers,bankIDs,capacity,auxAC,auxCB) == TRUE){
                                 printf("ERROR: Numero de cuenta %d en banco %d ya existe en el sistema, linea: %s\n",auxAC, auxCB, line);
                                 return TRUE;
-                            }
+                            }*/
 
                         accNumbers[useda] = auxAC;
                         bankIDs[useda] = auxCB;
@@ -1337,12 +1335,13 @@ boolean errorInFileStructure (FILE *input){
             if (line[i]=='-') sepCount++;
         }
 
-        if (sepCount>7 || sepCount<7){
+        if (sepCount>8 || sepCount<8){
+            printf("sepcount d\n",sepCount);
             printf("ERROR: Cada dato debe estar separado por un unico guion (-)\n");
             printf("Es posible que falten o sobren datos en la siguiente linea: %s", line);
             printf("Formato: Tipo de transaccion-Numero de cuenta emisor-Cedula de receptor-");
-            printf("Fecha-Monto-Codigo de transaccion-Descripcion-Numero de cuenta de receptor\n");
-            printf("1-1111-5555-Sun Feb 15 22:00:00 2018-800-13-reparacion de computador-5555\n");
+            printf("Fecha-Monto-Codigo de transaccion-Descripcion-Numero de cuenta de receptor-Codigo de banco cuenta de receptor\n");
+            printf("1-1111-5555-Sun Feb 15 22:00:00 2018-800-13-reparacion de computador-5555-1\n");
             return TRUE;
         }
         else{
@@ -1544,7 +1543,14 @@ boolean errorInFileStructure (FILE *input){
                             printf("Simbolo detectado: %sEn linea %s\n", dat, line);
                         }
                         ptr=NULL;
-
+                    break;
+                    case 8:
+                        auxi = strtol(dat, &ptr, 10);
+                            if (auxi == 0 || strlen(ptr)>1){
+                                isThereError =  TRUE;
+                                printf("ERROR: Codigo de banco de cuenta de receptor debe ser un numero entero positivo mayor a cero\n");
+                                printf("Simbolo detectado: %sEn linea %s\n",dat,line);
+                            }
                     /* For the array*/
                         if (usedt>0)
                             if (isUnique(transCodes,capacity,auxTC) == FALSE){
@@ -1927,6 +1933,8 @@ void makePayment(client **p){
     switch (create)
     {
     case 1:
+        op->issuersID = Iid;
+        op->issuersAID = Iad;
         op->secondPartysAN = Rad;
         op->secondPartysId = Rid;
         op->secondPartysCB = Rcb;
@@ -1948,6 +1956,8 @@ void makePayment(client **p){
         strcpy(op2->date,sttime);
         op2->code = Tc+1;
         op2->amount = Ta;
+        op2->issuersID = Rid;
+        op2->issuersAID = Rad;
 
         processPayment(&t,op2,Rad,Rcb);
         break;
@@ -1963,9 +1973,11 @@ void makePayment(client **p){
 
 transaction * isCodeValid (account *p, int n){
     transaction *t = NULL;
-        if (p->tnext){
-            t = p->tnext;
-        }
+
+        if (p)
+            if (p->tnext){
+                t = p->tnext;
+            }
 
     if (!t){
         return NULL;
@@ -2035,8 +2047,14 @@ void updateBalance (client ** p, int id, int aid, int codbank, int type, double 
 
     while (h){
         if (h->id == aid && h->bank == codbank){
-            if (type == 1) h->balance+=s;
-            else h->balance-=s;
+            if (type == 1) { 
+            h->balance+=s;
+            return;
+            }
+            else {
+            h->balance-=s;
+            return;
+            }
         }
         h=h->next;
     }
@@ -2115,20 +2133,21 @@ void deleteTransaction(client **p){
 
     Iid = verif->id;
     Iaid = verify->id;
-    Icb = verify->bank;
+    Rcb = verify->bank;
     Rid = target->secondPartysId;
     Raid = target->secondPartysAN;
-    Rcb = target->secondPartysCB;
+    Icb = target->secondPartysCB;
     auxcod = target->code;
     
     if (target->type == 1){
         updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
+        double a = target->amount;
         deleteTransaction(&verify->tnext,target->code);
         verif = clientExists(t,Rid);
         verify = searchbyCID(verif,Raid,Rcb);
         transaction * target2 = NULL;
         target2 = isCodeValid(verify,auxcod+1);
-        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,target->amount);
+        updateBalance(&t,verif->id,verify->id,verify->bank,target->type,a);
         if (target2)
             deleteTransaction(&verify->tnext,target2->code);
         return;
@@ -2837,8 +2856,47 @@ void checkTransactionsMenu(client *p){
         }
 }
 
+void outputFile (client *p, char * path){
+    FILE * output;
+    output = fopen(path, "w");
+    account * a = NULL, * h = NULL;
+    char date [25];
+    transaction * t = NULL;
+        while (p){
+            fprintf(output,"%s\n","*C");
+            fprintf(output,"%d%s%s%s%s%s%s\n",p->id,"-",p->name,"-",p->city,"-",p->phone);
+            if (p->anext){
+                fprintf(output,"%s\n","*B");
+                a = p->anext;
+                h = p->anext;
+                    while (a){
+                        fprintf(output,"%d%s%d%s%d%s%lf\n",a->id,"-",a->bank,"-",a->type,"-",a->balance);
+                        a=a->next;
+                    }
+                    if (h->tnext)
+                        fprintf(output,"%s\n","*T");
+                    while (h){
+                        if (h->tnext){
+                            t = h->tnext;
+                                while(t){
+                                    strcpy(date,"");
+                                    strncpy(date,t->date,24);
+                                    date[24]='\0';
+                                    fprintf(output,"%d%s%d%s%d%s%s%s%lf%s%d%s%s%s%d%s%d\n",t->type,"-",t->issuersAID,"-",t->secondPartysId,"-",date,"-",t->amount,"-",t->code,"-",t->description,"-",t->secondPartysAN,"-",t->secondPartysCB);
+                                    t=t->next;
+                                }
+                        }
+                        h=h->next;
+                    }
+                }
+            p=p->next;
+        }
+    fclose(output);
+}
+
 void showMenu(){
     client *c = NULL;
+    char path [1024];
     int op=-1;
         while (op){
             printf("\n*** Sistema de pagos y cobros P2Bank ***\n\n");
@@ -2846,8 +2904,6 @@ void showMenu(){
             printf("    \t 2. Transacciones\n");
             printf("    \t 3. Consultas varias\n");
             printf("    \t 4. Cargar datos desde archivo\n");
-            printf("    \t 5. Mostrar todos los datos\n");
-            //Option 5 will be used to make the output file because the program has to access the whole nested list anyway
             printf("    \t 0. Salir\n");
             scanf("%d",&op);
 
@@ -2877,6 +2933,12 @@ void showMenu(){
                 break;
 
             case 0:
+                printf("Ingrese ruta del archivo de salida\n");
+                scanf("%s",&path);
+                if (c != NULL){
+                    outputFile(c,path);
+                    printf("\n**************Archivo de salida creado con exito**********\n");
+                }
                 break;
             
             default:
